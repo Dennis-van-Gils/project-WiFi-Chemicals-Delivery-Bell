@@ -1,0 +1,11 @@
+CSS LED Lights                                                            https://codepen.io/fskirschbaum/pen/MYJNaj
+
+How To HTTP GET and POST requests with ESP8266 - ESP8266 Shop             https://esp8266-shop.com/blog/how-to-http-get-and-post-requests-with-esp8266/
+
+The Smallest WiFi Button in the World (ESP8266, MQTT, IFTTT) - YouTube    https://www.youtube.com/watch?v=ImVK5cGVrpQ
+
+web page hot reload in plain JavaScript + Apache & PHP ← ABrandao.com     http://www.abrandao.com/2019/04/web-page-hot-reload-in-plain-javascript-php/
+
+https://randomnerdtutorials.com/esp8266-nodemcu-http-get-post-arduino/
+https://forum.arduino.cc/t/esp8266-httpclient-library-for-https/495245
+https://maakbaas.com/esp8266-iot-framework/logs/https-requests/

@@ -1,0 +1,349 @@
+body {
+  background-color: #f4ecf7;
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    Arial,
+    "Noto Sans",
+    sans-serif,
+    "Apple Color Emoji",
+    "Segoe UI Emoji",
+    "Segoe UI Symbol",
+    "Noto Color Emoji";
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-content: start;
+  padding: 12px 18px;
+  row-gap: 24px;
+}
+
+.row {
+  display: flex;
+  flex-direction: row;
+  column-gap: 64px;
+}
+
+h1 {
+  display: block;
+  font-size: 1.2em;
+  margin-top: 0em;
+  margin-bottom: 0em;
+  margin-left: 0;
+  margin-right: 0;
+  font-weight: bold;
+}
+
+/*------------------------------------------------------------------------------
+  LEDS
+------------------------------------------------------------------------------*/
+
+:root {
+  --color-led-red-bright         : hsl(0, 100%, 50%);
+  --color-led-red-bright-alpha   : hsla(0, 100%, 50%, 0.5);
+  --color-led-red-dark           : hsl(0, 100%, 33%);
+  --color-led-red-shadow         : hsl(0, 56%, 17%);
+
+  --color-led-blue-bright        : hsl(188, 100%, 57%);
+  --color-led-blue-bright-alpha  : hsla(188, 100%, 57%, 0.5);
+  --color-led-blue-dark          : hsl(188, 100%, 33%);
+  --color-led-blue-shadow        : hsl(240, 100%, 20%);
+
+  --color-led-green-bright       : hsl(80, 100%, 50%);
+  --color-led-green-bright-alpha : hsla(80, 100%, 50%, 0.5);
+  --color-led-green-dark         : hsl(80, 100%, 33%);
+  --color-led-green-shadow       : hsl(80, 97%, 14%);
+
+  --color-led-yellow-bright      : hsl(60, 100%, 50%);
+  --color-led-yellow-bright-alpha: hsla(60, 100%, 50%, 0.5);
+  --color-led-yellow-dark        : hsl(60, 100%, 40%);
+  --color-led-yellow-shadow      : hsl(60, 97%, 25%);
+
+  --color-led-white-bright       : hsl(0, 0%, 100%);
+  --color-led-white-bright-alpha : hsla(0, 0%, 100%, 0.5);
+  --color-led-white-dark         : hsl(0, 0%, 50%);
+  --color-led-white-shadow       : hsl(0, 0%, 20%);
+
+  --led-blink-time: 1s;
+  --led-size: 64px;
+}
+
+.led-box {
+  margin: 0;
+  padding: 0;
+}
+
+/*------------------------------------------------------------------------------
+  LED: WHITE
+------------------------------------------------------------------------------*/
+
+.led-white {
+  margin: 10px auto;
+  width: var(--led-size);
+  height: var(--led-size);
+  background-color: var(--color-led-white-bright);
+  border-radius: 50%;
+  box-shadow:
+    rgba(0, 0, 0, 0.2) 0 -1px 7px 1px,
+    inset var(--color-led-white-shadow) 0 -1px 9px,
+    var(--color-led-white-bright-alpha) 0 2px 12px;
+}
+
+.led-white[off] {
+  background-color: var(--color-led-white-dark);
+}
+
+.led-white[blinking] {
+  -webkit-animation: blinkWhite var(--led-blink-time) infinite;
+  -moz-animation: blinkWhite var(--led-blink-time) infinite;
+  -ms-animation: blinkWhite var(--led-blink-time) infinite;
+  -o-animation: blinkWhite var(--led-blink-time) infinite;
+  animation: blinkWhite var(--led-blink-time) infinite;
+}
+
+@-webkit-keyframes blinkWhite {
+  from { background-color: var(--color-led-white-bright); }
+  50% { background-color: var(--color-led-white-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-white-shadow) 0 -1px 9px, var(--color-led-white-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-white-bright); }
+}
+@-moz-keyframes blinkWhite {
+  from { background-color: var(--color-led-white-bright); }
+  50% { background-color: var(--color-led-white-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-white-shadow) 0 -1px 9px, var(--color-led-white-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-white-bright); }
+}
+@-ms-keyframes blinkWhite {
+  from { background-color: var(--color-led-white-bright); }
+  50% { background-color: var(--color-led-white-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-white-shadow) 0 -1px 9px, var(--color-led-white-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-white-bright); }
+}
+@-o-keyframes blinkWhite {
+  from { background-color: var(--color-led-white-bright); }
+  50% { background-color: var(--color-led-white-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-white-shadow) 0 -1px 9px, var(--color-led-white-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-white-bright); }
+}
+@keyframes blinkWhite {
+  from { background-color: var(--color-led-white-bright); }
+  50% { background-color: var(--color-led-white-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-white-shadow) 0 -1px 9px, var(--color-led-white-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-white-bright); }
+}
+
+/*------------------------------------------------------------------------------
+  LED: BLUE
+------------------------------------------------------------------------------*/
+
+.led-blue {
+  margin: 10px auto;
+  width: var(--led-size);
+  height: var(--led-size);
+  background-color: var(--color-led-blue-bright);
+  border-radius: 50%;
+  box-shadow:
+    rgba(0, 0, 0, 0.2) 0 -1px 7px 1px,
+    inset var(--color-led-blue-shadow) 0 -1px 9px,
+    var(--color-led-blue-bright-alpha) 0 2px 12px;
+}
+
+.led-blue[off] {
+  background-color: var(--color-led-blue-dark);
+}
+
+.led-blue[blinking] {
+  -webkit-animation: blinkBlue var(--led-blink-time) infinite;
+  -moz-animation: blinkBlue var(--led-blink-time) infinite;
+  -ms-animation: blinkBlue var(--led-blink-time) infinite;
+  -o-animation: blinkBlue var(--led-blink-time) infinite;
+  animation: blinkBlue var(--led-blink-time) infinite;
+}
+
+@-webkit-keyframes blinkBlue {
+  from { background-color: var(--color-led-blue-bright); }
+  50% { background-color: var(--color-led-blue-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-blue-shadow) 0 -1px 9px, var(--color-led-blue-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-blue-bright); }
+}
+@-moz-keyframes blinkBlue {
+  from { background-color: var(--color-led-blue-bright); }
+  50% { background-color: var(--color-led-blue-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-blue-shadow) 0 -1px 9px, var(--color-led-blue-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-blue-bright); }
+}
+@-ms-keyframes blinkBlue {
+  from { background-color: var(--color-led-blue-bright); }
+  50% { background-color: var(--color-led-blue-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-blue-shadow) 0 -1px 9px, var(--color-led-blue-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-blue-bright); }
+}
+@-o-keyframes blinkBlue {
+  from { background-color: var(--color-led-blue-bright); }
+  50% { background-color: var(--color-led-blue-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-blue-shadow) 0 -1px 9px, var(--color-led-blue-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-blue-bright); }
+}
+@keyframes blinkBlue {
+  from { background-color: var(--color-led-blue-bright); }
+  50% { background-color: var(--color-led-blue-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-blue-shadow) 0 -1px 9px, var(--color-led-blue-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-blue-bright); }
+}
+
+/*------------------------------------------------------------------------------
+  LED: RED
+------------------------------------------------------------------------------*/
+
+.led-red {
+  margin: 10px auto;
+  width: var(--led-size);
+  height: var(--led-size);
+  background-color: var(--color-led-red-bright);
+  border-radius: 50%;
+  box-shadow:
+    rgba(0, 0, 0, 0.2) 0 -1px 7px 1px,
+    inset var(--color-led-red-shadow) 0 -1px 9px,
+    var(--color-led-red-bright-alpha) 0 2px 12px;
+}
+
+.led-red[off] {
+  background-color: var(--color-led-red-dark);
+}
+
+.led-red[blinking] {
+  -webkit-animation: blinkRed var(--led-blink-time) infinite;
+  -moz-animation: blinkRed var(--led-blink-time) infinite;
+  -ms-animation: blinkRed var(--led-blink-time) infinite;
+  -o-animation: blinkRed var(--led-blink-time) infinite;
+  animation: blinkRed var(--led-blink-time) infinite;
+}
+
+@-webkit-keyframes blinkRed {
+    from { background-color: var(--color-led-red-bright); }
+    50% { background-color: var(--color-led-red-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-red-shadow) 0 -1px 9px, var(--color-led-red-bright-alpha) 0 0 0;}
+    to { background-color: var(--color-led-red-bright); }
+}
+@-moz-keyframes blinkRed {
+    from { background-color: var(--color-led-red-bright); }
+    50% { background-color: var(--color-led-red-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-red-shadow) 0 -1px 9px, var(--color-led-red-bright-alpha) 0 0 0;}
+    to { background-color: var(--color-led-red-bright); }
+}
+@-ms-keyframes blinkRed {
+    from { background-color: var(--color-led-red-bright); }
+    50% { background-color: var(--color-led-red-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-red-shadow) 0 -1px 9px, var(--color-led-red-bright-alpha) 0 0 0;}
+    to { background-color: var(--color-led-red-bright); }
+}
+@-o-keyframes blinkRed {
+    from { background-color: var(--color-led-red-bright); }
+    50% { background-color: var(--color-led-red-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-red-shadow) 0 -1px 9px, var(--color-led-red-bright-alpha) 0 0 0;}
+    to { background-color: var(--color-led-red-bright); }
+}
+@keyframes blinkRed {
+    from { background-color: var(--color-led-red-bright); }
+    50% { background-color: var(--color-led-red-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-red-shadow) 0 -1px 9px, var(--color-led-red-bright-alpha) 0 0 0;}
+    to { background-color: var(--color-led-red-bright); }
+}
+
+/*------------------------------------------------------------------------------
+  LED: GREEN
+------------------------------------------------------------------------------*/
+
+.led-green {
+  margin: 10px auto;
+  width: var(--led-size);
+  height: var(--led-size);
+  background-color: var(--color-led-green-bright);
+  border-radius: 50%;
+  box-shadow:
+    rgba(0, 0, 0, 0.2) 0 -1px 7px 1px,
+    inset var(--color-led-green-shadow) 0 -1px 9px,
+    var(--color-led-green-bright-alpha) 0 2px 12px;
+}
+
+.led-green[off] {
+  background-color: var(--color-led-green-dark);
+}
+
+.led-green[blinking] {
+  -webkit-animation: blinkGreen var(--led-blink-time) infinite;
+  -moz-animation: blinkGreen var(--led-blink-time) infinite;
+  -ms-animation: blinkGreen var(--led-blink-time) infinite;
+  -o-animation: blinkGreen var(--led-blink-time) infinite;
+  animation: blinkGreen var(--led-blink-time) infinite;
+}
+
+@-webkit-keyframes blinkGreen {
+  from { background-color: var(--color-led-green-bright); }
+  50% { background-color: var(--color-led-green-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-green-shadow) 0 -1px 9px, var(--color-led-green-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-green-bright); }
+}
+@-moz-keyframes blinkGreen {
+  from { background-color: var(--color-led-green-bright); }
+  50% { background-color: var(--color-led-green-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-green-shadow) 0 -1px 9px, var(--color-led-green-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-green-bright); }
+}
+@-ms-keyframes blinkGreen {
+  from { background-color: var(--color-led-green-bright); }
+  50% { background-color: var(--color-led-green-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-green-shadow) 0 -1px 9px, var(--color-led-green-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-green-bright); }
+}
+@-o-keyframes blinkGreen {
+  from { background-color: var(--color-led-green-bright); }
+  50% { background-color: var(--color-led-green-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-green-shadow) 0 -1px 9px, var(--color-led-green-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-green-bright); }
+}
+@keyframes blinkGreen {
+  from { background-color: var(--color-led-green-bright); }
+  50% { background-color: var(--color-led-green-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-green-shadow) 0 -1px 9px, var(--color-led-green-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-green-bright); }
+}
+
+/*------------------------------------------------------------------------------
+  LED: YELLOW
+------------------------------------------------------------------------------*/
+
+.led-yellow {
+  margin: 10px auto;
+  width: var(--led-size);
+  height: var(--led-size);
+  background-color: var(--color-led-yellow-bright);
+  border-radius: 50%;
+  box-shadow:
+    rgba(0, 0, 0, 0.2) 0 -1px 7px 1px,
+    inset var(--color-led-yellow-shadow) 0 -1px 9px,
+    var(--color-led-yellow-bright-alpha) 0 2px 12px;
+}
+
+.led-yellow[off] {
+  background-color: var(--color-led-yellow-dark);
+}
+
+.led-yellow[blinking] {
+  -webkit-animation: blinkYellow var(--led-blink-time) infinite;
+  -moz-animation: blinkYellow var(--led-blink-time) infinite;
+  -ms-animation: blinkYellow var(--led-blink-time) infinite;
+  -o-animation: blinkYellow var(--led-blink-time) infinite;
+  animation: blinkYellow var(--led-blink-time) infinite;
+}
+
+@-webkit-keyframes blinkYellow {
+  from { background-color: var(--color-led-yellow-bright); }
+  50% { background-color: var(--color-led-yellow-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-yellow-shadow) 0 -1px 9px, var(--color-led-yellow-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-yellow-bright); }
+}
+@-moz-keyframes blinkYellow {
+  from { background-color: var(--color-led-yellow-bright); }
+  50% { background-color: var(--color-led-yellow-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-yellow-shadow) 0 -1px 9px, var(--color-led-yellow-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-yellow-bright); }
+}
+@-ms-keyframes blinkYellow {
+  from { background-color: var(--color-led-yellow-bright); }
+  50% { background-color: var(--color-led-yellow-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-yellow-shadow) 0 -1px 9px, var(--color-led-yellow-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-yellow-bright); }
+}
+@-o-keyframes blinkYellow {
+  from { background-color: var(--color-led-yellow-bright); }
+  50% { background-color: var(--color-led-yellow-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-yellow-shadow) 0 -1px 9px, var(--color-led-yellow-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-yellow-bright); }
+}
+@keyframes blinkYellow {
+  from { background-color: var(--color-led-yellow-bright); }
+  50% { background-color: var(--color-led-yellow-dark); box-shadow: rgba(0, 0, 0, 0.2) 0 -1px 7px 1px, inset var(--color-led-yellow-shadow) 0 -1px 9px, var(--color-led-yellow-bright-alpha) 0 0 0;}
+  to { background-color: var(--color-led-yellow-bright); }
+}
