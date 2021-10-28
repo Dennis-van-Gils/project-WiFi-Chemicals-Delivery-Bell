@@ -101,6 +101,7 @@ if (!file_exists(\Globals\FILE_BUTTON_STATES)) {
     </div>
   </div>
 
+  <!--
   <div class="row">
     <div>
       <?php
@@ -108,6 +109,14 @@ if (!file_exists(\Globals\FILE_BUTTON_STATES)) {
       ?>
     </div>
   </div>
+  -->
+
+  <div class="row">
+    <div><small>The project source can be found <a
+    href="https://github.com/Dennis-van-Gils/project-WiFi-Chemicals-Delivery-Bell"
+    target="_blank">here</a>.</small></div>
+  </div>
+
 </div>
 
 </body>
