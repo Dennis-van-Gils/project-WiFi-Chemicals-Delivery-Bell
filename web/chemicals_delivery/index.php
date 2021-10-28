@@ -11,6 +11,7 @@ session_start();
 // states we will use a simple text file on the server to keep track of the
 // button states.
 if (!file_exists(\Globals\FILE_BUTTON_STATES)) {
+  // File does not exist. Create one.
   $data = array(
     'date' => 'Unknown',  // String: Date of last registered button press
     'white' => 0,         // Int [bool]: State of white button
@@ -18,10 +19,11 @@ if (!file_exists(\Globals\FILE_BUTTON_STATES)) {
   );
   $states = json_encode($data);
   file_put_contents(\Globals\FILE_BUTTON_STATES, $states);
-
 } else {
+  // File exists --> read file contents
   $states = json_decode(file_get_contents(\Globals\FILE_BUTTON_STATES));
 }
+
 ?>
 
 <!----------------------------------------------------------------
@@ -39,14 +41,16 @@ if (!file_exists(\Globals\FILE_BUTTON_STATES)) {
 <link rel="icon" type="image/png" sizes="32x32" href=<?php echo \Globals\WEB_CHEMICALS_DELIVERY."favicon-32x32.png"; ?>>
 <link rel="icon" type="image/png" sizes="16x16" href=<?php echo \Globals\WEB_CHEMICALS_DELIVERY."favicon-16x16.png"; ?>>
 <link rel="manifest" href=<?php echo \Globals\WEB_CHEMICALS_DELIVERY."site.webmanifest"; ?>>
-
 <link href=<?php echo \Globals\WEB_CHEMICALS_DELIVERY.'stylesheet.css'; ?> rel="stylesheet" type="text/css">
 
 <meta charset="UTF-8">
 <meta name="robots" content="noindex, nofollow">
 <meta name="viewport" id="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="author" content="Dennis van Gils">
-<meta http-equiv="refresh" content="60">
+
+<!-- <meta http-equiv="refresh" content="60"> -->
+<!-- NOT NECESSARY. We use a Javascript to hotreload the webpage when needed. -->
+<script src=<?php echo \Globals\WEB_CHEMICALS_DELIVERY."hotreload.js"?>></script>
 
 </head>
 
