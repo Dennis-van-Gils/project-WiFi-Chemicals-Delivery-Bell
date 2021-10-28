@@ -1,0 +1,19 @@
+---------------
+  Web
+---------------
+
+x) Use POST instead of GET
+
+x) Check for (un)authorized MAC address of sender in .php
+
+x) Send email. Use a separate 'mailing_list.txt' file.
+
+---------------
+  MCU
+---------------
+
+x) Add screensaver to OLED display
+
+x) Add 'send email' functionality. Uses idle/activity timer.
+
+x) Add 'waiting rod' animation to 'Connect to WiFi' OLED info.
