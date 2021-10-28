@@ -1,4 +1,14 @@
 ---------------
+  Project
+---------------
+
+x) Add photos
+
+x) Add README.rst
+
+
+
+---------------
   Web
 ---------------
 
@@ -6,7 +16,9 @@ x) Use POST instead of GET
 
 x) Check for (un)authorized MAC address of sender in .php
 
-x) Send email. Use a separate 'mailing_list.txt' file.
+x) Add 'send email' functionality. Add mailing list to 'Globals.php'.
+
+
 
 ---------------
   MCU
