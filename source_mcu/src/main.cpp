@@ -133,11 +133,12 @@ public:
 ------------------------------------------------------------------------------*/
 
 void wifi_send_buttons(bool white_state, bool blue_state) {
+  // Send out new button states to the server hosting the web interface
+
   String request;
   String payload;
   int http_code;
 
-  // Send out new states to the server hosting the web interface
   display.clearDisplay();
   display.setCursor(0, 0);
   display.println("Sending...");
@@ -257,7 +258,7 @@ void setup() {
   display.println(F("Starting in 4 secs..."));
   display.display();
 
-  // Set default state
+  // Turn off all LEDs
   delay(4000);
   digitalWrite(PIN_LED_ONBOARD_RED, HIGH);
   digitalWrite(PIN_LED_ONBOARD_BLUE, HIGH);
@@ -267,8 +268,9 @@ void setup() {
   display.setTextSize(2);
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println("Online");
-  display.display();
+
+  // Send out initial button states to the server hosting the web interface
+  wifi_send_buttons(white_LED_is_on, blue_LED_is_on);
 }
 
 /*------------------------------------------------------------------------------
