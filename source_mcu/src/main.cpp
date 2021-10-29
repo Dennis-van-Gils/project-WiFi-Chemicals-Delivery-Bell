@@ -114,17 +114,15 @@ public:
     // otherwise leave the screen alone and continue waiting.
     now = millis();
 
-    if (now - last_activity > T_wait) {
-      if (now - last_draw > T_frame) {
-        display.clearDisplay();
-        display.drawBitmap(x_pos, 0, myBitmap, 32, 32, WHITE);
-        display.display();
+    if ((now - last_activity > T_wait) & (now - last_draw > T_frame)) {
+      display.clearDisplay();
+      display.drawBitmap(x_pos, 0, myBitmap, 32, 32, WHITE);
+      display.display();
 
-        last_draw = now;
-        x_pos++;
-        if (x_pos > 121) {
-          x_pos = -25;
-        }
+      last_draw = now;
+      x_pos++;
+      if (x_pos > 121) {
+        x_pos = -25;
       }
     };
   }
