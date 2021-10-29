@@ -64,11 +64,77 @@ Switch blue_switch = Switch(PIN_SWITCH_BTN_BLUE, INPUT_PULLUP);
 // OLED display
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
+// 'favicon-32x32', 32x32px
+const unsigned char myBitmap[] PROGMEM = {
+    0x00, 0x01, 0x80, 0x00, 0x00, 0x01, 0x80, 0x00, 0x00, 0x01, 0x80, 0x00,
+    0x00, 0x1d, 0x80, 0x00, 0x00, 0x3f, 0x80, 0x00, 0x00, 0x3f, 0xb8, 0x00,
+    0x00, 0x3f, 0xfc, 0x00, 0x00, 0x1f, 0xfc, 0x00, 0x00, 0x07, 0xfc, 0x00,
+    0x00, 0x07, 0xfc, 0x00, 0x00, 0x1f, 0xf8, 0x00, 0x00, 0x3f, 0xfc, 0x00,
+    0x00, 0x38, 0x1c, 0x00, 0x00, 0x3c, 0x3c, 0x00, 0x00, 0x1c, 0x38, 0x00,
+    0x00, 0x0c, 0x30, 0x00, 0x00, 0x0c, 0x30, 0x00, 0x00, 0x0c, 0x30, 0x00,
+    0x00, 0x0c, 0x30, 0x00, 0x00, 0x1c, 0x38, 0x00, 0x00, 0x18, 0x18, 0x00,
+    0x00, 0x38, 0x1c, 0x00, 0x00, 0x70, 0x0e, 0x00, 0x00, 0x70, 0x0e, 0x00,
+    0x00, 0xe7, 0x9f, 0x00, 0x01, 0xff, 0xff, 0x80, 0x01, 0xff, 0xf7, 0x80,
+    0x03, 0x98, 0x61, 0xc0, 0x03, 0x80, 0x01, 0xc0, 0x03, 0x00, 0x00, 0xc0,
+    0x03, 0xff, 0xff, 0xc0, 0x03, 0xff, 0xff, 0xc0};
+
 /*------------------------------------------------------------------------------
-  send_buttons
+  Screensaver
 ------------------------------------------------------------------------------*/
 
-void send_buttons(bool white_state, bool blue_state) {
+class Screensaver {
+private:
+  uint32_t T_wait;        // Screensaver shows after this period         [ms]
+  uint16_t T_frame;       // Display period for each frame               [ms]
+  uint32_t last_activity; // millis() value since last call to `reset()` [ms]
+  uint32_t last_draw;     // millis() value since last frame draw        [ms]
+  int16_t x_pos;          // Screensaver animation x-pixel position
+  uint32_t now;
+
+public:
+  Screensaver(uint32_t wait_period_ms, uint16_t frame_period_ms) {
+    // Args:
+    //    wait_period_ms  (uint32_t): Show screensaver after this time [ms]
+    //    frame_period_ms (uint16_t): Screensaver animation speed [ms]
+    T_wait = wait_period_ms;
+    T_frame = frame_period_ms;
+    reset();
+  }
+
+  void reset() {
+    // Reset the inactivity timer of the screensaver
+    now = millis();
+    last_activity = now;
+    last_draw = now;
+    x_pos = 0;
+  }
+
+  void update() {
+    // Draw screensaver to OLED screen when inactivity timer has fired,
+    // otherwise leave the screen alone and continue waiting.
+    now = millis();
+
+    if (now - last_activity > T_wait) {
+      if (now - last_draw > T_frame) {
+        display.clearDisplay();
+        display.drawBitmap(x_pos, 0, myBitmap, 32, 32, WHITE);
+        display.display();
+
+        last_draw = now;
+        x_pos++;
+        if (x_pos > 121) {
+          x_pos = -25;
+        }
+      }
+    };
+  }
+};
+
+/*------------------------------------------------------------------------------
+  wifi_send_buttons
+------------------------------------------------------------------------------*/
+
+void wifi_send_buttons(bool white_state, bool blue_state) {
   String request;
   String payload;
   int http_code;
@@ -160,6 +226,17 @@ void setup() {
   display.println(WiFi.macAddress());
 
   // Connect to wireless network
+  if (strcmp(ssid, "") == 0) {
+    String msg =
+        F("No WiFi configured.\nEdit wifi_settings.h,\nrecompile and flash.");
+    display.println(msg);
+    display.display();
+    Serial.println(msg);
+    while (true) {
+      delay(100);
+    }
+  }
+
   display.println(F("Connecting to WiFi..."));
   display.display();
   Serial.print(F("Connecting to WiFi network `"));
@@ -199,6 +276,7 @@ void setup() {
 /*------------------------------------------------------------------------------
   loop
 ------------------------------------------------------------------------------*/
+Screensaver screensaver(10000, 200);
 
 void loop() {
   static bool states_have_changed = false;
@@ -231,9 +309,12 @@ void loop() {
 
   if (states_have_changed) {
     // Send out new states to the server hosting the web interface
-    send_buttons(white_LED_is_on, blue_LED_is_on);
+    wifi_send_buttons(white_LED_is_on, blue_LED_is_on);
     states_have_changed = false;
+    screensaver.reset();
   }
+
+  screensaver.update();
 
   // The ESP8266 mcu has a lot of background processes (WiFi connectivity and
   // such) that must get computing time without too much long delays in
