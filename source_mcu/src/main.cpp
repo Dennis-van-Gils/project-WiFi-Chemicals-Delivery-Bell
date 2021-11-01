@@ -44,6 +44,10 @@ Date  : 28-10-2021
 #  include <wifi_settings_template.h>
 #endif
 
+// Network vars
+String MAC_address;
+String IP_address;
+
 // LEDs
 #define PIN_LED_ONBOARD_RED 0  // Inverted. Will mimick the white button
 #define PIN_LED_ONBOARD_BLUE 2 // Inverted. Will mimick the blue button
@@ -132,12 +136,12 @@ public:
   wifi_send_buttons
 ------------------------------------------------------------------------------*/
 
-void wifi_send_buttons(bool white_state, bool blue_state) {
-  // Send out new button states to the server hosting the web interface
+bool wifi_send_buttons(bool white_state, bool blue_state) {
+  /* Send out new button states to the server hosting the web interface.
 
-  String request;
-  String payload;
-  int http_code;
+  Returns true when successful, otherwise false.
+  */
+  bool success = false;
 
   display.clearDisplay();
   display.setCursor(0, 0);
@@ -147,18 +151,30 @@ void wifi_send_buttons(bool white_state, bool blue_state) {
   if (WiFi.status() == WL_CONNECTED) {
     HTTPClient http;
     WiFiClientSecure client;
-    client.setInsecure(); // Secure is overkill for our project
+    String request;
+    String payload;
+    int http_code;
 
-    request = (String(url_button_pressed) + F("?white=") +
-               String(white_LED_is_on) + F("&blue=") + String(blue_LED_is_on));
+    client.setInsecure(); // Secure is overkill for our project
+    http.begin(client, url_button_pressed);
+    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+    // clang-format off
+    request = (F("key=") + MAC_address +
+               F("&white=") + String(white_LED_is_on) +
+               F("&blue=") + String(blue_LED_is_on));
+    // clang-format on
+
     Serial.print("HTTP request: ");
+    Serial.println(url_button_pressed);
     Serial.println(request);
     Serial.print("Reply: ");
-    http.begin(client, request);
 
-    http_code = http.GET();
+    http_code = http.POST(request);
     payload = http.getString();
+
     if (http_code == 200) {
+      success = true;
       Serial.println(payload);
       display.println("Success");
       display.display();
@@ -181,6 +197,7 @@ void wifi_send_buttons(bool white_state, bool blue_state) {
   }
 
   Serial.println("");
+  return success;
 }
 
 /*------------------------------------------------------------------------------
@@ -203,63 +220,78 @@ void setup() {
   digitalWrite(PIN_LED_BTN_BLUE, HIGH);
 
   // Show MAC address
-  Serial.print(F("\n\nMAC address: "));
-  Serial.println(WiFi.macAddress());
+  MAC_address = WiFi.macAddress();
+  Serial.println(F("\n\nMAC address: ") + MAC_address);
 
-  /*
-  OLED display
-  128 x 32 px
-
-  Textsize
-  1          6 x  8
-  2         12 x 16
-  */
-  delay(100); // OLED display needs time on cold power-on
+  // OLED display:  128 x 32 px
+  // Textsize  1 :    6 x  8
+  //           2 :   12 x 16
+  delay(100); // OLED display needs init time when cold power-on
   display.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   display.setTextColor(SSD1306_WHITE);
   display.setTextSize(1);
 
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.print(F("MAC "));
-  display.println(WiFi.macAddress());
+  display.println(F("MAC ") + MAC_address);
 
   // Connect to wireless network
   if (strcmp(ssid, "") == 0) {
     String msg =
         F("No WiFi configured.\nEdit wifi_settings.h,\nrecompile and flash.");
+    Serial.println(msg);
     display.println(msg);
     display.display();
-    Serial.println(msg);
-    while (true) {
+    while (true) { // Infinite loop without escape
       delay(100);
     }
   }
 
-  display.println(F("Connecting to WiFi..."));
-  display.display();
   Serial.print(F("Connecting to WiFi network `"));
   Serial.print(ssid);
   Serial.print(F("`."));
+  display.println(F("Connecting to WiFi"));
+  display.display();
 
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
+    // Activity animation on serial monitor
     Serial.print(".");
+
+    // Activity animation on OLED screen
+    const char activity[] = "|/-\\";
+    static byte idx_activity = 0;
+    display.fillRect(114, 8, 6, 8, 0);
+    display.setCursor(114, 8);
+    display.println(activity[idx_activity]);
+    display.display();
+    if (++idx_activity > 3) {
+      idx_activity = 0;
+    }
+
+    delay(500);
   }
 
+  // Show obtained IP address
+  IP_address = WiFi.localIP().toString();
   Serial.println(F(" success!"));
-  Serial.print(F("IP address: "));
-  Serial.println(WiFi.localIP());
-  Serial.println("");
+  Serial.println(F("IP address: ") + IP_address);
+  display.println(F("IP  ") + IP_address);
 
-  display.print(F("IP  "));
-  display.println(WiFi.localIP());
-  display.println(F("Starting in 4 secs..."));
-  display.display();
+  // Count down
+  Serial.print(F("Starting in 4 secs..."));
+  display.println(F("Starting in   secs..."));
+  for (int8_t count_down_secs = 4; count_down_secs > 0;
+       count_down_secs--) {
+    display.fillRect(72, 24, 6, 8, 0);
+    display.setCursor(72, 24);
+    display.print(count_down_secs);
+    display.display();
+    delay(1000);
+  }
+  Serial.println(" done!\n");
 
   // Turn off all LEDs
-  delay(4000);
   digitalWrite(PIN_LED_ONBOARD_RED, HIGH);
   digitalWrite(PIN_LED_ONBOARD_BLUE, HIGH);
   digitalWrite(PIN_LED_BTN_WHITE, LOW);
