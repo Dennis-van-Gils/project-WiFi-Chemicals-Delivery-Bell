@@ -21,23 +21,31 @@ header("Content-Type: application/json");
 require_once 'globals.php';
 session_start();
 
-if ($_SERVER['REQUEST_METHOD'] == 'GET') { // TODO: Use POST instead of GET
-    if (!isset($_GET['white']) | !isset($_GET['blue'])) {
-        echo json_encode("Missing arguments");
-        exit;
-    }
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+  if (!isset($_POST['key'])) {
+    exit;
+  }
 
-    $white_button_state = filter_var($_GET['white'], FILTER_VALIDATE_INT);
-    $blue_button_state = filter_var($_GET['blue'], FILTER_VALIDATE_INT);
+  if (!password_verify($_POST['key'], \Globals\HASHED_MAC_ADDRESS)) {
+    echo json_encode("Invalid key");
+    exit;
+  }
 
-    $data = array(
-      'date' => date("D j M, H:i:s"),
-      'white' => $white_button_state,
-      'blue' => $blue_button_state,
-    );
-    $states = json_encode($data);
-    file_put_contents(\Globals\FILE_BUTTON_STATES, $states);
+  if (!isset($_POST['white']) | !isset($_POST['blue'])) {
+      echo json_encode("Missing arguments");
+      exit;
+  }
 
-    echo json_encode($white_button_state." ".$blue_button_state);
+  $white_button_state = filter_var($_POST['white'], FILTER_VALIDATE_INT);
+  $blue_button_state = filter_var($_POST['blue'], FILTER_VALIDATE_INT);
+
+  $data = array(
+    'date' => date("D j M, H:i:s"),
+    'white' => $white_button_state,
+    'blue' => $blue_button_state,
+  );
+  $states = json_encode($data);
+  file_put_contents(\Globals\FILE_BUTTON_STATES, $states);
+
+  echo json_encode($white_button_state." ".$blue_button_state);
 }
-?>
