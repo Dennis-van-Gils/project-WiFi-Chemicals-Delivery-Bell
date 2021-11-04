@@ -7,17 +7,20 @@
  * web interface.
  *
  * POST arguments:
- *  - white     | int (boolean), mandatory
- *  - blue      | int (boolean), mandatory
+ *   - key       | str          , mandatory
+ *   - white     | int (boolean), mandatory
+ *   - blue      | int (boolean), mandatory
  *
- * Possible JSON return values:
- *  Success:
- *  - '[white button state] [blue button state]'
+ * Possible plain-text return values:
+ *   Success:
+ *   - '[white button state] [blue button state]'
+ *
  *  No success:
- *  - 'Missing arguments'
+ *   - 'Invalid key'
+ *   - 'Missing arguments'
  *
  */
-header("Content-Type: application/json");
+header("Content-Type: text/plain");
 require_once 'globals.php';
 session_start();
 
@@ -27,12 +30,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   }
 
   if (!password_verify($_POST['key'], \Globals\HASHED_MAC_ADDRESS)) {
-    echo json_encode("Invalid key");
+    echo "Invalid key";
     exit;
   }
 
   if (!isset($_POST['white']) | !isset($_POST['blue'])) {
-      echo json_encode("Missing arguments");
+      echo "Missing arguments";
       exit;
   }
 
@@ -47,5 +50,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   $states = json_encode($data);
   file_put_contents(\Globals\FILE_BUTTON_STATES, $states);
 
-  echo json_encode($white_button_state." ".$blue_button_state);
+  echo $white_button_state." ".$blue_button_state;
 }

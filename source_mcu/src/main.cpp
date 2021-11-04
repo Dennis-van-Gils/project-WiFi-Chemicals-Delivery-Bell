@@ -17,13 +17,8 @@ NOTE:
 
 GitHub: https://github.com/Dennis-van-Gils/project-WiFi-Chemicals-Delivery-Bell
 Author: Dennis van Gils
-Date  : 28-10-2021
+Date  : 02-11-2021
  */
-
-// Usefull links:
-// https://randomnerdtutorials.com/esp8266-nodemcu-http-get-post-arduino/
-// https://forum.arduino.cc/t/esp8266-httpclient-library-for-https/495245
-// https://maakbaas.com/esp8266-iot-framework/logs/https-requests/
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -68,8 +63,9 @@ Switch blue_switch = Switch(PIN_SWITCH_BTN_BLUE, INPUT_PULLUP);
 // OLED display
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
-// 'favicon-32x32', 32x32px
-const unsigned char myBitmap[] PROGMEM = {
+// 'Flask', 32x32px
+// https://diyusthad.com/image2cpp
+const unsigned char img_flask[] PROGMEM = {
     0x00, 0x01, 0x80, 0x00, 0x00, 0x01, 0x80, 0x00, 0x00, 0x01, 0x80, 0x00,
     0x00, 0x1d, 0x80, 0x00, 0x00, 0x3f, 0x80, 0x00, 0x00, 0x3f, 0xb8, 0x00,
     0x00, 0x3f, 0xfc, 0x00, 0x00, 0x1f, 0xfc, 0x00, 0x00, 0x07, 0xfc, 0x00,
@@ -120,7 +116,7 @@ public:
 
     if ((now - last_activity > T_wait) & (now - last_draw > T_frame)) {
       display.clearDisplay();
-      display.drawBitmap(x_pos, 0, myBitmap, 32, 32, WHITE);
+      display.drawBitmap(x_pos, 0, img_flask, 32, 32, WHITE);
       display.display();
 
       last_draw = now;
@@ -128,9 +124,11 @@ public:
       if (x_pos > 121) {
         x_pos = -25;
       }
-    };
+    }
   }
 };
+
+Screensaver screensaver(10000, 200);
 
 /*------------------------------------------------------------------------------
   wifi_send_buttons
@@ -153,6 +151,7 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
     WiFiClientSecure client;
     String request;
     String payload;
+    char expected_reply[4];
     int http_code;
 
     client.setInsecure(); // Secure is overkill for our project
@@ -160,10 +159,12 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
     // clang-format off
+    // MAC_address = "00:00"; // DEBUG: Test
     request = (F("key=") + MAC_address +
                F("&white=") + String(white_LED_is_on) +
                F("&blue=") + String(blue_LED_is_on));
     // clang-format on
+    sprintf(expected_reply, "%d %d", white_LED_is_on, blue_LED_is_on);
 
     Serial.print("HTTP request: ");
     Serial.println(url_button_pressed);
@@ -174,29 +175,50 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
     payload = http.getString();
 
     if (http_code == 200) {
-      success = true;
       Serial.println(payload);
-      display.println("Success");
-      display.display();
+
+      if (strcmp(payload.c_str(), "Invalid key") == 0) {
+        Serial.println(F("ERROR: Invalid key received by web server."));
+        Serial.println(F("See 'Globals.php' on the web server for the key it "
+                         "expects. It should be the hashed MAC address of this "
+                         "Arduino."));
+        display.println(F("INVALIDKEY"));
+
+      } else if (strcmp(payload.c_str(), expected_reply) == 0) {
+        Serial.println("Success");
+        display.println("Success");
+        success = true;
+
+      } else {
+        Serial.println(expected_reply);
+        Serial.println("ERROR: Unexpected reply from web server.");
+        display.println("UNEXPREPLY");
+      }
 
     } else {
-      Serial.print("ERROR ");
+      Serial.print("ERROR: ");
       Serial.println(http_code);
       Serial.println(payload);
 
       display.println("ERROR " + String(http_code));
-      display.display();
     }
 
     http.end();
 
   } else {
-    Serial.println("WiFi disconnected");
-    display.println("NO WIFI");
-    display.display();
+    Serial.println("ERROR: WiFi disconnected");
+    Serial.println("Press the reset button to reconnect.");
+
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    display.println("NO WIFI.");
+    display.println("PRESS RESET.");
   }
 
   Serial.println("");
+  display.display();
+  screensaver.reset();
+
   return success;
 }
 
@@ -281,8 +303,7 @@ void setup() {
   // Count down
   Serial.print(F("Starting in 4 secs..."));
   display.println(F("Starting in   secs..."));
-  for (int8_t count_down_secs = 4; count_down_secs > 0;
-       count_down_secs--) {
+  for (int8_t count_down_secs = 4; count_down_secs > 0; count_down_secs--) {
     display.fillRect(72, 24, 6, 8, 0);
     display.setCursor(72, 24);
     display.print(count_down_secs);
@@ -308,7 +329,6 @@ void setup() {
 /*------------------------------------------------------------------------------
   loop
 ------------------------------------------------------------------------------*/
-Screensaver screensaver(10000, 200);
 
 void loop() {
   static bool states_have_changed = false;
@@ -343,7 +363,6 @@ void loop() {
     // Send out new states to the server hosting the web interface
     wifi_send_buttons(white_LED_is_on, blue_LED_is_on);
     states_have_changed = false;
-    screensaver.reset();
   }
 
   screensaver.update();
