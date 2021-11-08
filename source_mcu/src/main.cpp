@@ -279,6 +279,7 @@ void setup() {
   while (WiFi.status() != WL_CONNECTED) {
     // Activity animation on serial monitor
     Serial.print(".");
+    // Serial.println(WiFi.status());
 
     // Activity animation on OLED screen
     const char activity[] = "|/-\\";
