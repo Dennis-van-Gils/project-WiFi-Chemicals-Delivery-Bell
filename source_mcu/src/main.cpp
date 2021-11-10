@@ -39,7 +39,12 @@ Date  : 02-11-2021
 #  include <wifi_settings_template.h>
 #endif
 
+// Ser monitor
+#define Ser Serial
+
 // Network vars
+#define WIFI_BEGIN_TIMEOUT 10 // Stop trying to connect after N seconds [s]
+wl_status_t wifi_status;
 String MAC_address;
 String IP_address;
 
@@ -63,7 +68,7 @@ Switch blue_switch = Switch(PIN_SWITCH_BTN_BLUE, INPUT_PULLUP);
 // OLED display
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
-// 'Flask', 32x32px
+// Bitmap: 'Flask', 32x32px
 // https://diyusthad.com/image2cpp
 const unsigned char img_flask[] PROGMEM = {
     0x00, 0x01, 0x80, 0x00, 0x00, 0x01, 0x80, 0x00, 0x00, 0x01, 0x80, 0x00,
@@ -77,6 +82,12 @@ const unsigned char img_flask[] PROGMEM = {
     0x00, 0xe7, 0x9f, 0x00, 0x01, 0xff, 0xff, 0x80, 0x01, 0xff, 0xf7, 0x80,
     0x03, 0x98, 0x61, 0xc0, 0x03, 0x80, 0x01, 0xc0, 0x03, 0x00, 0x00, 0xc0,
     0x03, 0xff, 0xff, 0xc0, 0x03, 0xff, 0xff, 0xc0};
+
+// Timers
+uint32_t now = 0;
+uint32_t tick_0 = 0;
+uint32_t tick_1 = 0;
+uint32_t tick_2 = 0;
 
 /*------------------------------------------------------------------------------
   Screensaver
@@ -131,6 +142,49 @@ public:
 Screensaver screensaver(10000, 200);
 
 /*------------------------------------------------------------------------------
+  wifi_status_to_string
+------------------------------------------------------------------------------*/
+
+// clang-format off
+String wifi_status_to_string(wl_status_t status) {
+  switch (status) {
+    case WL_IDLE_STATUS:      return "IDLE_STATUS";
+    case WL_NO_SSID_AVAIL:    return "NO_SSID_AVAIL";
+    case WL_SCAN_COMPLETED:   return "SCAN_COMPLETED";
+    case WL_CONNECTED:        return "CONNECTED";
+    case WL_CONNECT_FAILED:   return "CONNECT_FAILED";
+    case WL_CONNECTION_LOST:  return "CONNECTION_LOST";
+    case WL_WRONG_PASSWORD:   return "WRONG_PASSWORD";
+    case WL_DISCONNECTED:     return "DISCONNECTED";
+    default:                  return "";
+  }
+}
+// clang-format on
+
+/*------------------------------------------------------------------------------
+  inf_loop
+------------------------------------------------------------------------------*/
+
+void inf_loop(String final_msg = "") {
+  // Infinite loop without escape, while displaying a (final error) message on
+  // the OLED screen flashing on and off to prevent OLED burn-in.
+  bool toggle = true;
+  while (true) {
+    display.clearDisplay();
+    display.setCursor(0, 0);
+    if (toggle) {
+      display.print(final_msg);
+      display.display();
+      delay(2000);
+    } else {
+      display.display();
+      delay(1000);
+    }
+    toggle = !toggle;
+  }
+}
+
+/*------------------------------------------------------------------------------
   wifi_send_buttons
 ------------------------------------------------------------------------------*/
 
@@ -143,10 +197,11 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
 
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println("Sending...");
+  display.println(F("Sending..."));
   display.display();
 
-  if (WiFi.status() == WL_CONNECTED) {
+  wifi_status = WiFi.status();
+  if (wifi_status == WL_CONNECTED) {
     HTTPClient http;
     WiFiClientSecure client;
     String request;
@@ -156,7 +211,7 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
 
     client.setInsecure(); // Secure is overkill for our project
     http.begin(client, url_button_pressed);
-    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+    http.addHeader(F("Content-Type"), F("application/x-www-form-urlencoded"));
 
     // clang-format off
     // MAC_address = "00:00"; // DEBUG: Test
@@ -166,56 +221,57 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
     // clang-format on
     sprintf(expected_reply, "%d %d", white_LED_is_on, blue_LED_is_on);
 
-    Serial.print("HTTP request: ");
-    Serial.println(url_button_pressed);
-    Serial.println(request);
-    Serial.print("Reply: ");
+    Ser.println(F("Request"));
+    Ser.println(F("  ") + String(url_button_pressed));
+    Ser.println(F("  ") + request);
 
     http_code = http.POST(request);
     payload = http.getString();
 
-    if (http_code == 200) {
-      Serial.println(payload);
+    Ser.println(F("Reply"));
+    Ser.println(F("  \"\"\""));
+    Ser.println(payload);
+    Ser.println(F("  \"\"\""));
 
+    if (http_code == 200) {
       if (strcmp(payload.c_str(), "Invalid key") == 0) {
-        Serial.println(F("ERROR: Invalid key received by web server."));
-        Serial.println(F("See 'Globals.php' on the web server for the key it "
-                         "expects. It should be the hashed MAC address of this "
-                         "Arduino."));
-        display.println(F("INVALIDKEY"));
+        Ser.println(F("SERVER ERROR: Invalid key received by web server."));
+        Ser.println(F("See 'Globals.php' on the web server."));
+        display.clearDisplay();
+        display.setCursor(0, 0);
+        display.print(F("SERVER ERR\nINVALIDKEY"));
 
       } else if (strcmp(payload.c_str(), expected_reply) == 0) {
-        Serial.println("Success");
-        display.println("Success");
+        Ser.println(F("Success"));
+        display.println(F("Success"));
         success = true;
 
       } else {
-        Serial.println(expected_reply);
-        Serial.println("ERROR: Unexpected reply from web server.");
-        display.println("UNEXPREPLY");
+        Ser.println(F("SERVER ERROR: Unexpected reply from web server."));
+        Ser.println(F("Was expecting: ") + String(expected_reply));
+        display.clearDisplay();
+        display.setCursor(0, 0);
+        display.print(F("SERVER ERR\nUNEXPREPLY"));
       }
 
     } else {
-      Serial.print("ERROR: ");
-      Serial.println(http_code);
-      Serial.println(payload);
-
-      display.println("ERROR " + String(http_code));
+      Ser.println(F("HTTP ERROR: ") + String(http_code));
+      display.clearDisplay();
+      display.setCursor(0, 0);
+      display.println(F("HTTP ERR\n") + String(http_code));
     }
 
     http.end();
 
-  } else {
-    Serial.println("ERROR: WiFi disconnected");
-    Serial.println("Press the reset button to reconnect.");
-
-    display.clearDisplay();
-    display.setCursor(0, 0);
-    display.println("NO WIFI.");
-    display.println("PRESS RESET.");
+  } else { // if (wifi_status == WL_CONNECTED)
+    display.setTextSize(1);
+    String msg = F("WiFi disconnected. Press reset.\n") +
+                 wifi_status_to_string(wifi_status);
+    Ser.println(msg);
+    inf_loop(msg);
   }
 
-  Serial.println("");
+  Ser.println("");
   display.display();
   screensaver.reset();
 
@@ -227,7 +283,7 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
 ------------------------------------------------------------------------------*/
 
 void setup() {
-  Serial.begin(9600);
+  Ser.begin(9600);
 
   // LEDs
   pinMode(PIN_LED_ONBOARD_RED, OUTPUT);
@@ -243,7 +299,7 @@ void setup() {
 
   // Show MAC address
   MAC_address = WiFi.macAddress();
-  Serial.println(F("\n\nMAC address: ") + MAC_address);
+  Ser.println(F("\n\nMAC address: ") + MAC_address);
 
   // OLED display:  128 x 32 px
   // Textsize  1 :    6 x  8
@@ -257,52 +313,77 @@ void setup() {
   display.setCursor(0, 0);
   display.println(F("MAC ") + MAC_address);
 
-  // Connect to wireless network
+  // Check WiFi config
   if (strcmp(ssid, "") == 0) {
     String msg =
         F("No WiFi configured.\nEdit wifi_settings.h,\nrecompile and flash.");
-    Serial.println(msg);
-    display.println(msg);
-    display.display();
-    while (true) { // Infinite loop without escape
-      delay(100);
-    }
+    Ser.println(msg);
+    inf_loop(msg);
   }
 
-  Serial.print(F("Connecting to WiFi network `"));
-  Serial.print(ssid);
-  Serial.print(F("`."));
+  // Connect to WiFi
+  Ser.print(F("Connecting to WiFi network `"));
+  Ser.print(ssid);
+  Ser.print(F("`."));
   display.println(F("Connecting to WiFi"));
   display.display();
 
-  WiFi.begin(ssid, password);
-  while (WiFi.status() != WL_CONNECTED) {
-    // Activity animation on serial monitor
-    Serial.print(".");
-    // Serial.println(WiFi.status());
+  now = millis();
+  tick_0 = now;
+  tick_1 = now;
+  tick_2 = now;
 
-    // Activity animation on OLED screen
-    const char activity[] = "|/-\\";
-    static byte idx_activity = 0;
-    display.fillRect(114, 8, 6, 8, 0);
-    display.setCursor(114, 8);
-    display.println(activity[idx_activity]);
-    display.display();
-    if (++idx_activity > 3) {
-      idx_activity = 0;
+  // Activity animation on OLED screen
+  const char activity[] = "|/-\\";
+  byte idx_activity = 0;
+
+  wifi_status = WiFi.begin(ssid, password);
+  while (true) {
+    now = millis();
+
+    // Check WiFi status
+    if (now - tick_1 > 1000) {
+      tick_1 += 1000;
+      wifi_status = WiFi.status();
+      if (wifi_status == WL_CONNECTED) {
+        break;
+      }
+
+      Ser.print(".");
+      // Ser.println(wifi_status);
+
+      if (now - tick_0 > WIFI_BEGIN_TIMEOUT * 1e3) {
+        WiFi.disconnect();
+        String msg = F("Could not connect to WiFi. Press reset.\n") +
+                     wifi_status_to_string(wifi_status);
+        Ser.println(msg);
+        inf_loop(msg);
+      }
     }
 
-    delay(500);
+    // Activity animation on OLED screen
+    if (now - tick_2 > 250) {
+      tick_2 += 250;
+      display.fillRect(114, 8, 6, 8, 0);
+      display.setCursor(114, 8);
+      display.println(activity[idx_activity]);
+      display.display();
+      if (++idx_activity > 3) {
+        idx_activity = 0;
+      }
+    }
+
+    yield();
   }
 
   // Show obtained IP address
   IP_address = WiFi.localIP().toString();
-  Serial.println(F(" success!"));
-  Serial.println(F("IP address: ") + IP_address);
+  Ser.println(F(" success!"));
+  Ser.println(F("IP address: ") + IP_address);
   display.println(F("IP  ") + IP_address);
 
   // Count down
-  Serial.print(F("Starting in 4 secs..."));
+  Ser.print(F("Starting in 4 secs..."));
   display.println(F("Starting in   secs..."));
   for (int8_t count_down_secs = 4; count_down_secs > 0; count_down_secs--) {
     display.fillRect(72, 24, 6, 8, 0);
@@ -311,7 +392,7 @@ void setup() {
     display.display();
     delay(1000);
   }
-  Serial.println(" done!\n");
+  Ser.println(F(" done!\n"));
 
   // Turn off all LEDs
   digitalWrite(PIN_LED_ONBOARD_RED, HIGH);
@@ -348,7 +429,7 @@ void loop() {
     white_LED_was_on = white_LED_is_on;
     digitalWrite(PIN_LED_BTN_WHITE, white_LED_is_on);
     digitalWrite(PIN_LED_ONBOARD_RED, !white_LED_is_on);
-    Serial.println("Button: white");
+    Ser.println("WHITE\n-----");
     states_have_changed = true;
   }
 
@@ -356,7 +437,7 @@ void loop() {
     blue_LED_was_on = blue_LED_is_on;
     digitalWrite(PIN_LED_BTN_BLUE, blue_LED_is_on);
     digitalWrite(PIN_LED_ONBOARD_BLUE, !blue_LED_is_on);
-    Serial.println("Button: blue");
+    Ser.println("BLUE\n-----");
     states_have_changed = true;
   }
 
