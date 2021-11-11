@@ -31,6 +31,7 @@ Date  : 11-11-2021
 #include <Adafruit_GFX.h>
 #include <Adafruit_I2CDevice.h>
 #include <Adafruit_SSD1306.h>
+#include <DvG_SerialCommand.h>
 #include <avdweb_Switch.h>
 
 #if __has_include("wifi_settings.h")
@@ -39,8 +40,9 @@ Date  : 11-11-2021
 #  include <wifi_settings_template.h>
 #endif
 
-// Ser monitor
+// Serial monitor
 #define Ser Serial
+DvG_SerialCommand sc(Ser);
 
 // Network vars
 #define WIFI_BEGIN_TIMEOUT 30 // Stop trying to connect after N seconds [s]
@@ -444,8 +446,10 @@ void setup() {
 ------------------------------------------------------------------------------*/
 
 void loop() {
+  char *strCmd; // Incoming serial command string
   static bool states_have_changed = false;
 
+  // Check physical buttons
   white_switch.poll();
   if (white_switch.pushed()) {
     white_LED_is_on = !white_LED_is_on;
@@ -456,6 +460,19 @@ void loop() {
     blue_LED_is_on = !blue_LED_is_on;
   }
 
+  // Check for incoming serial commands used for debugging
+  if (sc.available()) {
+    strCmd = sc.getCmd();
+
+    if (strcmp(strCmd, "w") == 0) {
+      white_LED_is_on = !white_LED_is_on;
+
+    } else if (strcmp(strCmd, "b") == 0) {
+      blue_LED_is_on = !blue_LED_is_on;
+    }
+  }
+
+  // Did anything change?
   if (white_LED_is_on != white_LED_was_on) {
     white_LED_was_on = white_LED_is_on;
     digitalWrite(PIN_LED_BTN_WHITE, white_LED_is_on);
