@@ -17,7 +17,7 @@ NOTE:
 
 GitHub: https://github.com/Dennis-van-Gils/project-WiFi-Chemicals-Delivery-Bell
 Author: Dennis van Gils
-Date  : 02-11-2021
+Date  : 11-11-2021
  */
 
 #include <Arduino.h>
@@ -129,8 +129,9 @@ public:
       display.clearDisplay();
       display.drawBitmap(x_pos, 0, img_flask, 32, 32, WHITE);
       display.display();
-
       last_draw = now;
+
+      // Scroll animation left to right
       x_pos++;
       if (x_pos > 121) {
         x_pos = -25;
@@ -234,17 +235,17 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
     Ser.println(F("  \"\"\""));
 
     if (http_code == 200) {
-      if (strcmp(payload.c_str(), "Invalid key") == 0) {
+      if (strcmp(payload.c_str(), expected_reply) == 0) {
+        Ser.println(F("Success"));
+        display.println(F("Success"));
+        success = true;
+
+      } else if (strcmp(payload.c_str(), "Invalid key") == 0) {
         Ser.println(F("SERVER ERROR: Invalid key received by web server."));
         Ser.println(F("See 'Globals.php' on the web server."));
         display.clearDisplay();
         display.setCursor(0, 0);
         display.print(F("SERVER ERR\nINVALIDKEY"));
-
-      } else if (strcmp(payload.c_str(), expected_reply) == 0) {
-        Ser.println(F("Success"));
-        display.println(F("Success"));
-        success = true;
 
       } else {
         Ser.println(F("SERVER ERROR: Unexpected reply from web server."));
@@ -254,8 +255,8 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
         display.print(F("SERVER ERR\nUNEXPREPLY"));
       }
 
-    } else {
-      Ser.println(F("HTTP ERROR: ") + String(http_code));
+    } else { // if (http_code == 200)
+      Ser.println(F("HTTP ERROR ") + String(http_code));
       display.clearDisplay();
       display.setCursor(0, 0);
       display.println(F("HTTP ERR\n") + String(http_code));
@@ -264,6 +265,8 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
     http.end();
 
   } else { // if (wifi_status == WL_CONNECTED)
+    // WiFi got disconnected
+    // TODO: Try to reconnect?
     display.setTextSize(1);
     String msg = F("WiFi disconnected. Press reset.\n") +
                  wifi_status_to_string(wifi_status);
