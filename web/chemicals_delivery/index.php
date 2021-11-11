@@ -7,21 +7,20 @@ header("Content-Type: text/html;charset=UTF-8");
 require_once 'globals.php';
 session_start();
 
-// Instead of having a MySQL database to keep track of the WiFi Arduino button
-// states we will use a simple text file on the server to keep track of the
-// button states.
-if (!file_exists(\Globals\FILE_BUTTON_STATES)) {
+// Instead of having a MySQL database to keep track of the status of the white
+// and blue LED buttons, we will use a simple text file on the server instead.
+if (!file_exists(\Globals\FILE_BUTTON_STATUS)) {
   // File does not exist. Create one.
   $data = array(
     'date' => 'Unknown',  // String: Date of last registered button press
-    'white' => 0,         // Int [bool]: State of white button
-    'blue' => 0,          // Int [bool]: State of blue button
+    'white' => 0,         // Int [bool]: Status of white LED button
+    'blue' => 0,          // Int [bool]: Status of blue LED button
   );
-  $states = json_encode($data);
-  file_put_contents(\Globals\FILE_BUTTON_STATES, $states);
+  $status = json_encode($data);
+  file_put_contents(\Globals\FILE_BUTTON_STATUS, $status);
 } else {
   // File exists --> read file contents
-  $states = json_decode(file_get_contents(\Globals\FILE_BUTTON_STATES));
+  $status = json_decode(file_get_contents(\Globals\FILE_BUTTON_STATUS));
 }
 
 ?>
@@ -64,8 +63,8 @@ if (!file_exists(\Globals\FILE_BUTTON_STATES)) {
   <div class="row">
     <h1>
       <?php
-        if ($states->white == true |
-            $states->blue == true) {
+        if ($status->white == true |
+            $status->blue == true) {
           echo "Chemicals delivered";
         } else {
           echo "No chemicals awaiting";
@@ -78,7 +77,7 @@ if (!file_exists(\Globals\FILE_BUTTON_STATES)) {
     <div class="led-box">
       <div class="led-white"
         <?php
-          echo ($states->white == true ? "blinking" : "off");
+          echo ($status->white == true ? "blinking" : "off");
         ?>
       ></div>
       <div style="text-align:center">REGULAR</div>
@@ -87,7 +86,7 @@ if (!file_exists(\Globals\FILE_BUTTON_STATES)) {
     <div class="led-box">
       <div class="led-blue"
         <?php
-          echo ($states->blue == true ? "blinking" : "off");
+          echo ($status->blue == true ? "blinking" : "off");
         ?>
       ></div>
       <div style="text-align:center">COOLED</div>
@@ -97,7 +96,7 @@ if (!file_exists(\Globals\FILE_BUTTON_STATES)) {
   <div class="row">
     <div>
       <small>Last button press was registered at:</small><br>
-      <?php echo $states->date ?>
+      <?php echo $status->date ?>
     </div>
   </div>
 

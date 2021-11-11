@@ -18,22 +18,22 @@ session_start();
 
 $changed = false;
 
-if (@file_exists(\Globals\FILE_BUTTON_STATES)) {
-  $md5 = md5_file(\Globals\FILE_BUTTON_STATES);
+if (@file_exists(\Globals\FILE_BUTTON_STATUS)) {
+  $md5 = md5_file(\Globals\FILE_BUTTON_STATUS);
 } else {
-  die(json_encode("File ".\Globals\FILE_BUTTON_STATES." does not exist."));
+  die(json_encode("File ".\Globals\FILE_BUTTON_STATUS." does not exist."));
 }
 
-if (isset($_SESSION[\Globals\FILE_BUTTON_STATES])) { // Do we have this session set?
-  if ($md5 != $_SESSION[\Globals\FILE_BUTTON_STATES]) {
+if (isset($_SESSION[\Globals\FILE_BUTTON_STATUS])) { // Do we have this session set?
+  if ($md5 != $_SESSION[\Globals\FILE_BUTTON_STATUS]) {
     $changed = true;
-    $_SESSION[\Globals\FILE_BUTTON_STATES] = $md5;
+    $_SESSION[\Globals\FILE_BUTTON_STATUS] = $md5;
   }
 } else {
-  $_SESSION[\Globals\FILE_BUTTON_STATES] = $md5;
+  $_SESSION[\Globals\FILE_BUTTON_STATUS] = $md5;
 }
 
 echo json_encode([
-  'filename' => \Globals\FILE_BUTTON_STATES,
+  'filename' => \Globals\FILE_BUTTON_STATUS,
  	'hasChanged' => $changed
 ]);

@@ -16,8 +16,8 @@ define(__NAMESPACE__.'\WEB_ROOT', $protocol.$_SERVER['HTTP_HOST'].$_SERVER['CONT
 // URL of the web interface
 define(__NAMESPACE__.'\WEB_CHEMICALS_DELIVERY', \Globals\WEB_ROOT.'chemicals_delivery/');
 
-// Filename of the textfile on the server to store the button states to
-define(__NAMESPACE__.'\FILE_BUTTON_STATES', 'button_states.txt');
+// Filename of the textfile on the server to store the button status to
+define(__NAMESPACE__.'\FILE_BUTTON_STATUS', 'button_status.txt');
 
 // The Arduino can only successfully communicate with the web server if it sends
 // along the correct key. The key that is send by the Arduino is its MAC address

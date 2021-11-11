@@ -5,9 +5,9 @@
  *
  * This script will send out an email to inform the users that:
  *   1) Chemicals are delivered and awaiting to be processed. This is the case
- *      when the button states 'white' and/or 'blue' are active.
+ *      when either button status 'white' or 'blue' is active.
  *   2) No more chemicals are awaiting to be processed. This is the case when
- *      neither the 'white' or 'blue' button states are active.
+ *      neither button status 'white' or 'blue' is active.
  *
  * POST arguments:
  *   - key       | str          , mandatory
@@ -43,24 +43,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
   set_error_handler('exceptions_error_handler');
 
-  // Read states from file
+  // Read button status from file
   try {
-    $data = file_get_contents(\Globals\FILE_BUTTON_STATES);
+    $data = file_get_contents(\Globals\FILE_BUTTON_STATUS);
   } catch (Exception $e) {
-    echo "SERVER ERROR: While reading file `".\Globals\FILE_BUTTON_STATES."`".PHP_EOL;
+    echo "SERVER ERROR: While reading file `".\Globals\FILE_BUTTON_STATUS."`".PHP_EOL;
     echo $e->getMessage();
     restore_error_handler();
     exit;
   }
 
-  // Parse states from file
+  // Parse button status from file
   try {
-    $states = json_decode($data);
-    $date = $states->{'date'};
-    $white = $states->{'white'};
-    $blue = $states->{'blue'};
+    $status = json_decode($data);
+    $date = $status->{'date'};
+    $white = $status->{'white'};
+    $blue = $status->{'blue'};
   } catch (Exception $e) {
-    echo "SERVER ERROR: Could not parse file `".\Globals\FILE_BUTTON_STATES."`".PHP_EOL;
+    echo "SERVER ERROR: Could not parse file `".\Globals\FILE_BUTTON_STATUS."`".PHP_EOL;
     echo $e->getMessage();
     restore_error_handler();
     exit;
