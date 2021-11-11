@@ -12,11 +12,15 @@ x) Add README.rst
   Web
 ---------------
 
-x) Use POST instead of GET
+-) Use POST instead of GET
+Done
 
-x) Check for (un)authorized MAC address of sender in .php
+-) Check for (un)authorized MAC address of sender in .php
+Done
 
 x) Add 'send email' functionality. Add mailing list to 'Globals.php'.
+
+x) Send email when the Arduino is freshly booting/restarting informing user of such
 
 
 
@@ -24,8 +28,12 @@ x) Add 'send email' functionality. Add mailing list to 'Globals.php'.
   MCU
 ---------------
 
-x) Add screensaver to OLED display
+-) Add screensaver to OLED display
+Done
+
+-) Add 'waiting rod' animation to 'Connect to WiFi' OLED info.
+Done
 
 x) Add 'send email' functionality. Uses idle/activity timer.
 
-x) Add 'waiting rod' animation to 'Connect to WiFi' OLED info.
+x) Send email when the Arduino is freshly booting/restarting informing user of such
