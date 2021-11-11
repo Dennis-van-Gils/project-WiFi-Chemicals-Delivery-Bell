@@ -22,7 +22,8 @@
  *   - 'SERVER ERROR: Could not parse file ..."
  *   - 'SERVER ERROR: Could not send email.'
  *
- * TODO: Send email when freshly booting/restarting informing user of such
+ * TODO: Change GET to POST
+ *
  */
 header("Content-Type: text/plain");
 require_once 'globals.php';
