@@ -31,7 +31,12 @@ const char *password = "";
 
 // The URL to the PHP script on your webserver that will handle the button
 // presses.
-// E.g.: "https://[your web host]/chemicals_delivery/button_pressed.php"
+// E.g.: "https://[your web host]/chemicals_delivery/php/button_pressed.php"
 const char *url_button_pressed = "";
+
+// The URL to the PHP script on your webserver that will handle sending out
+// emails.
+// E.g.: "https://[your web host]/chemicals_delivery/php/send_email.php"
+const char *url_send_email = "";
 
 #endif

@@ -6,21 +6,17 @@ x) Add photos
 
 x) Add README.rst
 
-
+x) Rethink the 'send button states and email `restarted` during boot. Capture in
+   one action on the server side.
+   
+   
 
 ---------------
   Web
 ---------------
 
--) Use POST instead of GET
-Done
-
--) Check for (un)authorized MAC address of sender in .php
-Done
-
-x) Add 'send email' functionality. Add mailing list to 'Globals.php'.
-
-x) Send email when the Arduino is freshly booting/restarting informing user of such
+x) Send email when the Arduino is freshly booting/restarting informing user of
+   such in the web panel
 
 
 
@@ -28,12 +24,8 @@ x) Send email when the Arduino is freshly booting/restarting informing user of s
   MCU
 ---------------
 
--) Add screensaver to OLED display
-Done
+x) Add 'send email' functionality using idle/activity timer.
+   Automate to send 5 minutes after latest button press.
 
--) Add 'waiting rod' animation to 'Connect to WiFi' OLED info.
-Done
-
-x) Add 'send email' functionality. Uses idle/activity timer.
-
-x) Send email when the Arduino is freshly booting/restarting informing user of such
+x) Send email when the Arduino is freshly booting/restarting informing user of
+   such
