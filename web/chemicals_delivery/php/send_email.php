@@ -26,7 +26,7 @@
  *
  */
 header("Content-Type: text/plain");
-require_once 'globals.php';
+require_once '../globals.php';
 
 function exceptions_error_handler($severity, $message, $filename, $lineno) {
   throw new ErrorException($message, 0, $severity, $filename, $lineno);
