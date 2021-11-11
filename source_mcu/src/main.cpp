@@ -279,12 +279,18 @@ bool http_post(String url, String post_request, String post_expected_reply) {
 void send_starting_up() {
   /* Signal the web server that the Arduino has (re)started.
    */
-  // clang-format off
-  http_post(url_starting_up,
-            "key=" + MAC_address,
-            "1");
-  // clang-format on
+  http_post(url_starting_up, "key=" + MAC_address, "1");
+  screensaver.reset();
+}
 
+/*------------------------------------------------------------------------------
+  send_email
+------------------------------------------------------------------------------*/
+
+void send_email(bool restarted = false) {
+  /* Signal the web server to send out emails.
+   */
+  http_post(url_send_email, "key=" + MAC_address, "1");
   screensaver.reset();
 }
 
@@ -305,24 +311,6 @@ void send_buttons(bool white_state, bool blue_state) {
             "&blue=" + String(blue_LED_is_on),
             expected_reply);
   // clang-format on
-
-  screensaver.reset();
-}
-
-/*------------------------------------------------------------------------------
-  send_email
-------------------------------------------------------------------------------*/
-
-void send_email(bool restarted = false) {
-  /* Signal the web server to send out emails.
-   */
-  // clang-format off
-  http_post(url_send_email,
-            "key=" + MAC_address +
-            (restarted ? "&restarted" : ""),
-            "1");
-  // clang-format on
-
   screensaver.reset();
 }
 
