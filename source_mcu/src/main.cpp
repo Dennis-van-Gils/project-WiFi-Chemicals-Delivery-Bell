@@ -190,9 +190,9 @@ void inf_loop(String final_msg = "") {
 ------------------------------------------------------------------------------*/
 
 bool http_post(String url, String post_request, String post_expected_reply) {
-  /* Send a HTTP POST to the server hosting the web interface. Will handle
-  errors and also checks for a correct POST reply. Shows info on the serial
-  monitor and OLED display.
+  /* Send a HTTP POST request to the web server. Will handle errors and also
+  checks for a correct POST reply. Shows info on the serial monitor and OLED
+  display.
 
   Returns true when successful, otherwise false.
   */
@@ -267,11 +267,33 @@ bool http_post(String url, String post_request, String post_expected_reply) {
 }
 
 /*------------------------------------------------------------------------------
+  send_starting_up
+------------------------------------------------------------------------------*/
+
+bool send_starting_up() {
+  /* Signal the web server that the Arduino has (re)started.
+
+  Returns true when successful, otherwise false.
+  */
+  bool success;
+
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println(F("Sending..."));
+  display.display();
+
+  success = http_post(url_starting_up, F("key=") + MAC_address, "1");
+  screensaver.reset();
+
+  return success;
+}
+
+/*------------------------------------------------------------------------------
   send_buttons
 ------------------------------------------------------------------------------*/
 
 bool send_buttons(bool white_state, bool blue_state) {
-  /* Send out new button states to the server hosting the web interface.
+  /* Send out new button states to the web server.
 
   Returns true when successful, otherwise false.
   */
@@ -301,7 +323,7 @@ bool send_buttons(bool white_state, bool blue_state) {
 ------------------------------------------------------------------------------*/
 
 bool send_email(bool restarted = false) {
-  /* Signal the server hosting the web interface to send out emails.
+  /* Signal the web server to send out emails.
 
   Returns true when successful, otherwise false.
   */
@@ -445,13 +467,11 @@ void setup() {
   digitalWrite(PIN_LED_BTN_WHITE, LOW);
   digitalWrite(PIN_LED_BTN_BLUE, LOW);
 
+  // Larger OLED text
   display.setTextSize(2);
-  display.clearDisplay();
-  display.setCursor(0, 0);
 
-  // Send out initial button states to the server hosting the web interface
-  send_buttons(white_LED_is_on, blue_LED_is_on);
-  send_email(true); // true: Arduino has restarted
+  // Signal the web server that the Arduino has (re)started
+  send_starting_up();
 }
 
 /*------------------------------------------------------------------------------
@@ -488,7 +508,7 @@ void loop() {
   }
 
   if (states_have_changed) {
-    // Send out new states to the server hosting the web interface
+    // Send out new states to the web server
     send_buttons(white_LED_is_on, blue_LED_is_on);
     states_have_changed = false;
   }
