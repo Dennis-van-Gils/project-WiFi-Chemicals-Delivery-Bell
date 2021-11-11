@@ -13,7 +13,7 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 'On');
 header('Content-Type: application/json');
-require_once 'globals.php';
+require_once 'php/globals.php';
 session_start();
 
 $changed = false;

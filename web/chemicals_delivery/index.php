@@ -48,8 +48,8 @@ if (!file_exists(\Globals\FILE_BUTTON_STATUS)) {
 <meta name="author" content="Dennis van Gils">
 
 <!-- <meta http-equiv="refresh" content="60"> -->
-<!-- NOT NECESSARY. We use a Javascript to hotreload the webpage when needed. -->
-<script src=<?php echo \Globals\WEB_CHEMICALS_DELIVERY."hotreload.js"?>></script>
+<!-- NOT NECESSARY. We use a Javascript to hot reload the webpage when needed. -->
+<script src=<?php echo \Globals\WEB_CHEMICALS_DELIVERY."hot_reload.js"?>></script>
 
 </head>
 
