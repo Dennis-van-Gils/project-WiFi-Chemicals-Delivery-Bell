@@ -5,18 +5,12 @@
 x) Add photos
 
 x) Add README.rst
-
-x) Rethink the 'send button states and email `restarted` during boot. Capture in
-   one action on the server side.
    
    
 
 ---------------
   Web
 ---------------
-
-x) Send email when the Arduino is freshly booting/restarting informing user of
-   such in the web panel
 
 
 
@@ -27,5 +21,4 @@ x) Send email when the Arduino is freshly booting/restarting informing user of
 x) Add 'send email' functionality using idle/activity timer.
    Automate to send 5 minutes after latest button press.
 
-x) Send email when the Arduino is freshly booting/restarting informing user of
-   such
+x) Screen saver should kick in immediately when sending is successful

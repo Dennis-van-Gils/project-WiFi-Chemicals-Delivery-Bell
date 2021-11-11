@@ -163,13 +163,16 @@ String wifi_status_to_string(wl_status_t status) {
 // clang-format on
 
 /*------------------------------------------------------------------------------
-  inf_loop
+  infinite_loop
 ------------------------------------------------------------------------------*/
 
-void inf_loop(String final_msg = "") {
-  // Infinite loop without escape, while displaying a (final error) message on
-  // the OLED screen flashing on and off to prevent OLED burn-in.
+void infinite_loop(String final_msg = "") {
+  // Infinite loop without escape, while displaying a final error message on the
+  // OLED screen flashing on and off to prevent OLED burn-in.
   bool toggle = true;
+
+  Ser.println(final_msg);
+
   while (true) {
     display.clearDisplay();
     display.setCursor(0, 0);
@@ -202,10 +205,15 @@ bool http_post(String url, String post_request, String post_expected_reply) {
   String payload;
   int http_code;
 
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println("Sending...");
+  display.display();
+
   wifi_status = WiFi.status();
   if (wifi_status == WL_CONNECTED) {
     Ser.println("Request");
-    Ser.println("  " + String(url));
+    Ser.println("  " + url);
     Ser.println("  " + post_request);
 
     client.setInsecure(); // Secure is overkill for our project
@@ -254,10 +262,8 @@ bool http_post(String url, String post_request, String post_expected_reply) {
     // WiFi got disconnected
     // TODO: Try to reconnect?
     display.setTextSize(1);
-    String msg = "WiFi disconnected. Press reset.\n" +
-                 wifi_status_to_string(wifi_status);
-    Ser.println(msg);
-    inf_loop(msg);
+    infinite_loop("WiFi disconnected. Press reset.\n" +
+                  wifi_status_to_string(wifi_status));
   }
 
   Ser.println("");
@@ -270,76 +276,54 @@ bool http_post(String url, String post_request, String post_expected_reply) {
   send_starting_up
 ------------------------------------------------------------------------------*/
 
-bool send_starting_up() {
+void send_starting_up() {
   /* Signal the web server that the Arduino has (re)started.
+   */
+  // clang-format off
+  http_post(url_starting_up,
+            "key=" + MAC_address,
+            "1");
+  // clang-format on
 
-  Returns true when successful, otherwise false.
-  */
-  bool success;
-
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.println("Sending...");
-  display.display();
-
-  success = http_post(url_starting_up, "key=" + MAC_address, "1");
   screensaver.reset();
-
-  return success;
 }
 
 /*------------------------------------------------------------------------------
   send_buttons
 ------------------------------------------------------------------------------*/
 
-bool send_buttons(bool white_state, bool blue_state) {
+void send_buttons(bool white_state, bool blue_state) {
   /* Send out new button states to the web server.
-
-  Returns true when successful, otherwise false.
-  */
-  bool success;
-  String request;
+   */
   char expected_reply[4];
-
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.println("Sending...");
-  display.display();
+  sprintf(expected_reply, "%d %d", white_LED_is_on, blue_LED_is_on);
 
   // clang-format off
-  request = ("key=" + MAC_address +
-             "&white=" + String(white_LED_is_on) +
-             "&blue=" + String(blue_LED_is_on));
+  http_post(url_button_pressed,
+            "key=" + MAC_address +
+            "&white=" + String(white_LED_is_on) +
+            "&blue=" + String(blue_LED_is_on),
+            expected_reply);
   // clang-format on
-  sprintf(expected_reply, "%d %d", white_LED_is_on, blue_LED_is_on);
-  success = http_post(url_button_pressed, request, expected_reply);
-  screensaver.reset();
 
-  return success;
+  screensaver.reset();
 }
 
 /*------------------------------------------------------------------------------
   send_email
 ------------------------------------------------------------------------------*/
 
-bool send_email(bool restarted = false) {
+void send_email(bool restarted = false) {
   /* Signal the web server to send out emails.
+   */
+  // clang-format off
+  http_post(url_send_email,
+            "key=" + MAC_address +
+            (restarted ? "&restarted" : ""),
+            "1");
+  // clang-format on
 
-  Returns true when successful, otherwise false.
-  */
-  bool success;
-  String request;
-
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.println("Sending...");
-  display.display();
-
-  request = ("key=" + MAC_address + (restarted ? "&restarted" : ""));
-  success = http_post(url_send_email, request, "1");
   screensaver.reset();
-
-  return success;
 }
 
 /*------------------------------------------------------------------------------
@@ -379,10 +363,8 @@ void setup() {
 
   // Check WiFi config
   if (strcmp(ssid, "") == 0) {
-    String msg =
-        "No WiFi configured.\nEdit wifi_settings.h,\nrecompile and flash.";
-    Ser.println(msg);
-    inf_loop(msg);
+    infinite_loop(
+        "No WiFi configured.\nEdit wifi_settings.h,\nrecompile and flash.");
   }
 
   // Connect to WiFi
@@ -418,10 +400,8 @@ void setup() {
 
       if (now - tick_0 > WIFI_BEGIN_TIMEOUT * 1e3) {
         WiFi.disconnect();
-        String msg = "Could not connect to WiFi. Press reset.\n" +
-                     wifi_status_to_string(wifi_status);
-        Ser.println(msg);
-        inf_loop(msg);
+        infinite_loop("Could not connect to WiFi. Press reset.\n" +
+                      wifi_status_to_string(wifi_status));
       }
     }
 
