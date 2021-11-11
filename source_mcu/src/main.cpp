@@ -469,6 +469,9 @@ void loop() {
 
     } else if (strcmp(strCmd, "b") == 0) {
       blue_LED_is_on = !blue_LED_is_on;
+
+    } else if (strcmp(strCmd, "e") == 0) {
+      send_email();
     }
   }
 
