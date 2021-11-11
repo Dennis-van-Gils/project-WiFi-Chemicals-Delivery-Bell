@@ -1,0 +1,39 @@
+Subject: [DingDong] REFRIGERATED chemicals delivered
+
+  """
+  REFRIGERATED chemicals delivered
+    
+    Date :
+    White: 0/1
+    Blue : 1
+    
+    Remote IP: 130.89.101.11
+    https://pof-inventory.tnw.utwente.nl/chemicals_delivery/
+  """
+
+
+
+Subject: [DingDong] Chemicals delivered
+
+  """
+  Chemicals delivered
+    ...
+  """
+  
+
+
+Subject: [DingDong] No chemicals awaiting anymore
+
+  """
+  No chemicals awaiting anymore
+    ...
+  """
+  
+
+  
+Subject: [DingDong] Arduino has restarted
+
+  """
+  The WiFi Arduino `Chemicals Delivery Bell` has (re)started
+    ...
+  """

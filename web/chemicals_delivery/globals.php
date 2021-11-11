@@ -32,5 +32,6 @@ define(__NAMESPACE__.'\HASHED_MAC_ADDRESS', '$2y$10$Mven4dAvVq6UYpSTUqZWFeoV.Tk9
 
 // Email
 //   email_to: Comma-separated list of recipients
-define(__NAMESPACE__.'\email_to', 'd.p.m.vangils@utwente.nl');
+define(__NAMESPACE__.'\email_tag' , '[DingDong]');
 define(__NAMESPACE__.'\email_from', 'PoF Chemicals Delivery Bell <noreply@noreply.nl>');
+define(__NAMESPACE__.'\email_to', 'd.p.m.vangils@utwente.nl');

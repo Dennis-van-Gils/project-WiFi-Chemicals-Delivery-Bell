@@ -8,9 +8,12 @@
  *      when either button status 'white' or 'blue' is active.
  *   2) No more chemicals are awaiting to be processed. This is the case when
  *      neither button status 'white' or 'blue' is active.
+ *   3) The Arduino has (re)started. This is the case when POST argument
+ *      `restarted` has been defined, regardless of its value.
  *
  * POST arguments:
  *   - key       | str          , mandatory
+ *   - restarted | any          , optional
  *
  * Possible plain-text return values:
  *   Success:
@@ -22,8 +25,6 @@
  *   - 'SERVER ERROR: Could not parse file ..."
  *   - 'SERVER ERROR: Could not send email.'
  *
- * TODO: Change GET to POST
- *
  */
 header("Content-Type: text/plain");
 require_once '../globals.php';
@@ -32,14 +33,20 @@ function exceptions_error_handler($severity, $message, $filename, $lineno) {
   throw new ErrorException($message, 0, $severity, $filename, $lineno);
 }
 
-if ($_SERVER['REQUEST_METHOD'] == 'GET') {
-  if (!isset($_GET['key'])) {
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+  if (!isset($_POST['key'])) {
     exit;
   }
 
-  if (!password_verify($_GET['key'], \Globals\HASHED_MAC_ADDRESS)) {
+  if (!password_verify($_POST['key'], \Globals\HASHED_MAC_ADDRESS)) {
     echo "Invalid key";
     exit;
+  }
+
+  if (!isset($_POST['restarted'])) {
+    $restarted = false;
+  } else {
+    $restarted = true;
   }
 
   set_error_handler('exceptions_error_handler');
@@ -69,15 +76,36 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
 
   restore_error_handler();
 
-  // Send email
-  $subject = 'Email test';
-  $message = (
-    'You have chemicals awaiting'.PHP_EOL.
-    $date.PHP_EOL.
-    $white.PHP_EOL.
-    $blue.PHP_EOL);
+  // Construct email message
   $headers = 'From: '.\Globals\email_from.PHP_EOL;
+  $subject = \Globals\email_tag." ";
 
+  if ($restarted) {
+      $subject = $subject."Arduino has restarted";
+      $message = "The WiFi Arduino `Chemicals Delivery Bell` has (re)started";
+  } else {
+    if ($blue) {
+      $subject = $subject."REFRIGERATED chemicals delivered";
+      $message = "REFRIGERATED chemicals delivered";
+    } else if ($white) {
+      $subject = $subject."Chemicals delivered";
+      $message = "Chemicals delivered";
+    } else {
+      $subject = $subject."No chemicals awaiting anymore";
+      $message = "No chemicals awaiting anymore";
+    }
+  }
+
+  $message = (
+    $message.PHP_EOL.PHP_EOL.
+    "  Date : ".$date.PHP_EOL.
+    "  White: ".$white.PHP_EOL.
+    "  Blue : ".$blue.PHP_EOL.PHP_EOL.
+    "  Remote IP: ".$_SERVER['REMOTE_ADDR'].PHP_EOL.
+    "  ".\Globals\WEB_CHEMICALS_DELIVERY
+  );
+
+  // Send email
   if (mail(\Globals\email_to, $subject, $message, $headers)) {
     // Success
     echo "1";
