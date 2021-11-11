@@ -15,14 +15,14 @@
  *   Success:
  *   - '[white button state] [blue button state]'
  *
- *  No success:
+ *   No success:
  *   - 'Invalid key'
  *   - 'Missing arguments'
  *
  */
 header("Content-Type: text/plain");
 require_once 'globals.php';
-session_start();
+session_start(); // TODO: check if actually obsolete statement
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   if (!isset($_POST['key'])) {
