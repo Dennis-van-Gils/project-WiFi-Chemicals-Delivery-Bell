@@ -43,7 +43,7 @@ Date  : 11-11-2021
 #define Ser Serial
 
 // Network vars
-#define WIFI_BEGIN_TIMEOUT 10 // Stop trying to connect after N seconds [s]
+#define WIFI_BEGIN_TIMEOUT 30 // Stop trying to connect after N seconds [s]
 wl_status_t wifi_status;
 String MAC_address;
 String IP_address;
@@ -186,47 +186,33 @@ void inf_loop(String final_msg = "") {
 }
 
 /*------------------------------------------------------------------------------
-  wifi_send_buttons
+  http_post
 ------------------------------------------------------------------------------*/
 
-bool wifi_send_buttons(bool white_state, bool blue_state) {
-  /* Send out new button states to the server hosting the web interface.
+bool http_post(String url, String post_request, String post_expected_reply) {
+  /* Send a HTTP POST to the server hosting the web interface. Will handle
+  errors and also checks for a correct POST reply. Shows info on the serial
+  monitor and OLED display.
 
   Returns true when successful, otherwise false.
   */
   bool success = false;
-
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.println(F("Sending..."));
-  display.display();
+  HTTPClient http;
+  WiFiClientSecure client;
+  String payload;
+  int http_code;
 
   wifi_status = WiFi.status();
   if (wifi_status == WL_CONNECTED) {
-    HTTPClient http;
-    WiFiClientSecure client;
-    String request;
-    String payload;
-    char expected_reply[4];
-    int http_code;
+    Ser.println(F("Request"));
+    Ser.println(F("  ") + String(url));
+    Ser.println(F("  ") + post_request);
 
     client.setInsecure(); // Secure is overkill for our project
-    http.begin(client, url_button_pressed);
+    http.begin(client, url);
     http.addHeader(F("Content-Type"), F("application/x-www-form-urlencoded"));
 
-    // clang-format off
-    // MAC_address = "00:00"; // DEBUG: Test
-    request = (F("key=") + MAC_address +
-               F("&white=") + String(white_LED_is_on) +
-               F("&blue=") + String(blue_LED_is_on));
-    // clang-format on
-    sprintf(expected_reply, "%d %d", white_LED_is_on, blue_LED_is_on);
-
-    Ser.println(F("Request"));
-    Ser.println(F("  ") + String(url_button_pressed));
-    Ser.println(F("  ") + request);
-
-    http_code = http.POST(request);
+    http_code = http.POST(post_request);
     payload = http.getString();
 
     Ser.println(F("Reply"));
@@ -235,7 +221,7 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
     Ser.println(F("  \"\"\""));
 
     if (http_code == 200) {
-      if (strcmp(payload.c_str(), expected_reply) == 0) {
+      if (strcmp(payload.c_str(), post_expected_reply.c_str()) == 0) {
         Ser.println(F("Success"));
         display.println(F("Success"));
         success = true;
@@ -249,7 +235,7 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
 
       } else {
         Ser.println(F("SERVER ERROR: Unexpected reply from web server."));
-        Ser.println(F("Was expecting: ") + String(expected_reply));
+        Ser.println(F("Was expecting: ") + post_expected_reply);
         display.clearDisplay();
         display.setCursor(0, 0);
         display.print(F("SERVER ERR\nUNEXPREPLY"));
@@ -276,6 +262,62 @@ bool wifi_send_buttons(bool white_state, bool blue_state) {
 
   Ser.println("");
   display.display();
+
+  return success;
+}
+
+/*------------------------------------------------------------------------------
+  send_buttons
+------------------------------------------------------------------------------*/
+
+bool send_buttons(bool white_state, bool blue_state) {
+  /* Send out new button states to the server hosting the web interface.
+
+  Returns true when successful, otherwise false.
+  */
+  bool success;
+  String request;
+  char expected_reply[4];
+
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println(F("Sending..."));
+  display.display();
+
+  // clang-format off
+  request = (F("key=") + MAC_address +
+             F("&white=") + String(white_LED_is_on) +
+             F("&blue=") + String(blue_LED_is_on));
+  // clang-format on
+  sprintf(expected_reply, "%d %d", white_LED_is_on, blue_LED_is_on);
+  success = http_post(url_button_pressed, request, expected_reply);
+  screensaver.reset();
+
+  return success;
+}
+
+/*------------------------------------------------------------------------------
+  send_email
+------------------------------------------------------------------------------*/
+
+bool send_email(bool restarted = false) {
+  /* Signal the server hosting the web interface to send out emails.
+
+  Returns true when successful, otherwise false.
+  */
+  bool success;
+  String request;
+
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println(F("Sending..."));
+  display.display();
+
+  // clang-format off
+  request = (F("key=") + MAC_address +
+             (restarted ? F("&restarted") : F("")));
+  // clang-format on
+  success = http_post(url_send_email, request, "1");
   screensaver.reset();
 
   return success;
@@ -408,7 +450,8 @@ void setup() {
   display.setCursor(0, 0);
 
   // Send out initial button states to the server hosting the web interface
-  wifi_send_buttons(white_LED_is_on, blue_LED_is_on);
+  send_buttons(white_LED_is_on, blue_LED_is_on);
+  send_email(true); // true: Arduino has restarted
 }
 
 /*------------------------------------------------------------------------------
@@ -446,7 +489,7 @@ void loop() {
 
   if (states_have_changed) {
     // Send out new states to the server hosting the web interface
-    wifi_send_buttons(white_LED_is_on, blue_LED_is_on);
+    send_buttons(white_LED_is_on, blue_LED_is_on);
     states_have_changed = false;
   }
 
