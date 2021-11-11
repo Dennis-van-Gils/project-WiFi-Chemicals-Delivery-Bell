@@ -15,7 +15,7 @@
 // Hot-reload the webpage whenever the file pointed to by variable
 // `\Globals\FILE_ARDUINO_STATUS` changes on the server. Checks every N seconds.
 var url = "hot_reload.php";
-var poll_interval = 3000; // [ms]
+var poll_interval = 5000; // [ms]
 
 setInterval(
   function() {
