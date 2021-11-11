@@ -63,9 +63,9 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   $message = "The WiFi Arduino `Chemicals Delivery Bell` has (re)started";
   $message = (
     $message.PHP_EOL.PHP_EOL.
-    "  Date : ".$status->{'date'}.PHP_EOL.
-    "  White: ".$status->{'white'}.PHP_EOL.
-    "  Blue : ".$status->{'blue'}.PHP_EOL.PHP_EOL.
+    "  Date : ".$data['date'].PHP_EOL.
+    "  White: ".$data['white'].PHP_EOL.
+    "  Blue : ".$data['blue'].PHP_EOL.PHP_EOL.
     "  Remote IP: ".$_SERVER['REMOTE_ADDR'].PHP_EOL.
     "  ".\Globals\WEB_CHEMICALS_DELIVERY
   );
