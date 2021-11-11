@@ -84,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $subject = $subject."Chemicals delivered";
     $message = "Chemicals delivered";
   } else {
-    $subject = $subject."No chemicals awaiting anymore";
+    $subject = $subject."  --  All done  --";
     $message = "No chemicals awaiting anymore";
   }
 
