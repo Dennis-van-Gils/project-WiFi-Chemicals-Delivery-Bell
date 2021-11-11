@@ -31,9 +31,6 @@ function exceptions_error_handler($severity, $message, $filename, $lineno) {
   throw new ErrorException($message, 0, $severity, $filename, $lineno);
 }
 
-set_error_handler('exceptions_error_handler');
-set_error_handler('exceptions_error_handler');
-
 if ($_SERVER['REQUEST_METHOD'] == 'GET') {
   if (!isset($_GET['key'])) {
     exit;
@@ -44,14 +41,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     exit;
   }
 
-  $data = file_get_contents(\Globals\FILE_BUTTON_STATES);
-  if ($data === false) {
+  set_error_handler('exceptions_error_handler');
+
+  // Read states from file
+  try {
+    $data = file_get_contents(\Globals\FILE_BUTTON_STATES);
+  } catch (Exception $e) {
     echo "SERVER ERROR: While reading file `".\Globals\FILE_BUTTON_STATES."`".PHP_EOL;
-    echo error_get_last()['message'];
+    echo $e->getMessage();
+    restore_error_handler();
     exit;
   }
 
-  set_error_handler('exceptions_error_handler');
+  // Parse states from file
   try {
     $states = json_decode($data);
     $date = $states->{'date'};
@@ -60,11 +62,13 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
   } catch (Exception $e) {
     echo "SERVER ERROR: Could not parse file `".\Globals\FILE_BUTTON_STATES."`".PHP_EOL;
     echo $e->getMessage();
-    exit;
-  } finally {
     restore_error_handler();
+    exit;
   }
 
+  restore_error_handler();
+
+  // Send email
   $subject = 'Email test';
   $message = (
     'You have chemicals awaiting'.PHP_EOL.
@@ -73,7 +77,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'GET') {
     $blue.PHP_EOL);
   $headers = 'From: '.\Globals\email_from.PHP_EOL;
 
-  // Send email
   if (mail(\Globals\email_to, $subject, $message, $headers)) {
     // Success
     echo "1";
