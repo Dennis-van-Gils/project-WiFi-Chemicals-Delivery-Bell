@@ -1,6 +1,6 @@
 <?php
 /**
- * hotreload.php
+ * hot_reload.php
  *
  * Simple file checker and returns back information about the state of the file
  *

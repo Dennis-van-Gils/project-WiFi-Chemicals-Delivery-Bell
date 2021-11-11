@@ -1,6 +1,6 @@
 ///-----------------------------------------------------------------
 ///
-///   Hotload.js : Simple Javascript include file to poll server (PHP)
+///   hot_reload.js : Simple Javascript include file to poll server (PHP)
 ///   file checker code
 ///
 ///   Description: XHTTP Request polls for file changes
@@ -14,7 +14,7 @@
 
 // Hot-reload the webpage whenever the file pointed to by variable
 // `\Globals\FILE_BUTTON_STATUS` changes on the server. Checks every N seconds.
-var url = "hotreload.php";
+var url = "hot_reload.php";
 var poll_interval = 3000; // [ms]
 
 setInterval(
