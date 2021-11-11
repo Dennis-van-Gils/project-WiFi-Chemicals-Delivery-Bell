@@ -4,7 +4,7 @@
  * Web interface to the Arduino WiFi Chemicals Delivery Bell.
  */
 header("Content-Type: text/html;charset=UTF-8");
-require_once 'globals.php';
+require_once 'php/globals.php';
 session_start();
 
 // Instead of having a MySQL database to keep track of the status of the white
