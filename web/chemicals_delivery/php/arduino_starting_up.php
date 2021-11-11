@@ -3,11 +3,9 @@
  * @author Dennis van Gils
  * Web interface to the Arduino WiFi `Chemicals Delivery` bell.
  *
- * This script will send out an email to inform the users that:
- *   1) Chemicals are delivered and awaiting to be processed. This is the case
- *      when either button status 'white' or 'blue' is active.
- *   2) No more chemicals are awaiting to be processed. This is the case when
- *      neither button status 'white' or 'blue' is active.
+ * This script will initialize the status of the white and blue LED buttons at
+ * the server side, to be shown in the web interface. And this script will send
+ * out an email informing the users that the Arduino has (re)started.
  *
  * POST arguments:
  *   - key       | str          , mandatory
@@ -18,8 +16,7 @@
  *
  *   No success:
  *   - 'Invalid key'
- *   - 'SERVER ERROR: While reading file ..."
- *   - 'SERVER ERROR: Could not parse file ..."
+ *   - 'SERVER ERROR: While saving file ..."
  *   - 'SERVER ERROR: Could not send email.'
  *
  */
@@ -40,54 +37,30 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     exit;
   }
 
-  if (!isset($_POST['restarted'])) {
-    $restarted = false;
-  } else {
-    $restarted = true;
-  }
+  $data = array(
+    'date' => date("D j M, H:i:s"),
+    'white' => 0,
+    'blue' => 0,
+    'starting_up' => 1,
+  );
+  $status = json_encode($data);
 
+  // Save Arduino status to file
   set_error_handler('exceptions_error_handler');
-
-  // Read Arduino status from file
   try {
-    $data = file_get_contents(\Globals\FILE_ARDUINO_STATUS);
+    file_put_contents(\Globals\FILE_ARDUINO_STATUS, $status);
   } catch (Exception $e) {
-    echo "SERVER ERROR: While reading file `".\Globals\FILE_ARDUINO_STATUS."`".PHP_EOL;
+    echo "SERVER ERROR: While saving file `".\Globals\FILE_ARDUINO_STATUS."`".PHP_EOL;
     echo $e->getMessage();
     restore_error_handler();
     exit;
   }
-
-  // Parse Arduino status from file
-  try {
-    $status = json_decode($data);
-    $date = $status->{'date'};
-    $white = $status->{'white'};
-    $blue = $status->{'blue'};
-  } catch (Exception $e) {
-    echo "SERVER ERROR: Could not parse file `".\Globals\FILE_ARDUINO_STATUS."`".PHP_EOL;
-    echo $e->getMessage();
-    restore_error_handler();
-    exit;
-  }
-
   restore_error_handler();
 
   // Construct email message
   $headers = 'From: '.\Globals\email_from.PHP_EOL;
-  $subject = \Globals\email_tag." ";
-
-  if ($blue) {
-    $subject = $subject."REFRIGERATED chemicals delivered";
-    $message = "REFRIGERATED chemicals delivered";
-  } else if ($white) {
-    $subject = $subject."Chemicals delivered";
-    $message = "Chemicals delivered";
-  } else {
-    $subject = $subject."No chemicals awaiting anymore";
-    $message = "No chemicals awaiting anymore";
-  }
-
+  $subject = \Globals\email_tag." "."Arduino has restarted";
+  $message = "The WiFi Arduino `Chemicals Delivery Bell` has (re)started";
   $message = (
     $message.PHP_EOL.PHP_EOL.
     "  Date : ".$date.PHP_EOL.
@@ -105,6 +78,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // delivery. Not whether it ultimately gets delivered, but basically whether
     // the domain exists and the address is a validly formatted email address.
     echo "SERVER ERROR: Could not send email.".PHP_EOL."Check server logs.";
+    exit;
   }
 
   // Success

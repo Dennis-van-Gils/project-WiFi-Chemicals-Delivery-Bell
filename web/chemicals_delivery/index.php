@@ -9,19 +9,21 @@ require_once 'globals.php';
 session_start();
 
 // Instead of having a MySQL database to keep track of the status of the white
-// and blue LED buttons, we will use a simple text file on the server instead.
-if (!file_exists(\Globals\FILE_BUTTON_STATUS)) {
+// and blue LED buttons of the Arduino, we will use a simple text file on the
+// server instead.
+if (!file_exists(\Globals\FILE_ARDUINO_STATUS)) {
   // File does not exist. Create one.
   $data = array(
     'date' => 'Unknown',  // String: Date of last registered button press
-    'white' => 0,         // Int [bool]: Status of white LED button
-    'blue' => 0,          // Int [bool]: Status of blue LED button
+    'white' => 0,         // Int [bool]: Is the white LED button turned on?
+    'blue' => 0,          // Int [bool]: Is the blue LED button turned on?
+    'starting_up' => 0,   // Int [bool]: Has the Arduino just started up?
   );
   $status = json_encode($data);
-  file_put_contents(\Globals\FILE_BUTTON_STATUS, $status);
+  file_put_contents(\Globals\FILE_ARDUINO_STATUS, $status);
 } else {
   // File exists --> read file contents
-  $status = json_decode(file_get_contents(\Globals\FILE_BUTTON_STATUS));
+  $status = json_decode(file_get_contents(\Globals\FILE_ARDUINO_STATUS));
 }
 
 ?>
@@ -67,6 +69,8 @@ if (!file_exists(\Globals\FILE_BUTTON_STATUS)) {
         if ($status->white == true |
             $status->blue == true) {
           echo "Chemicals delivered";
+        } elseif ($status->starting_up == true) {
+          echo "Arduino has (re)started";
         } else {
           echo "No chemicals awaiting";
         }
@@ -96,7 +100,7 @@ if (!file_exists(\Globals\FILE_BUTTON_STATUS)) {
 
   <div class="row">
     <div>
-      <small>Last button press was registered at:</small><br>
+      <small>Last activity was registered at:</small><br>
       <?php echo $status->date ?>
     </div>
   </div>

@@ -18,22 +18,22 @@ session_start();
 
 $changed = false;
 
-if (@file_exists(\Globals\FILE_BUTTON_STATUS)) {
-  $md5 = md5_file(\Globals\FILE_BUTTON_STATUS);
+if (@file_exists(\Globals\FILE_ARDUINO_STATUS)) {
+  $md5 = md5_file(\Globals\FILE_ARDUINO_STATUS);
 } else {
-  die(json_encode("File ".\Globals\FILE_BUTTON_STATUS." does not exist."));
+  die(json_encode("File ".\Globals\FILE_ARDUINO_STATUS." does not exist."));
 }
 
-if (isset($_SESSION[\Globals\FILE_BUTTON_STATUS])) { // Do we have this session set?
-  if ($md5 != $_SESSION[\Globals\FILE_BUTTON_STATUS]) {
+if (isset($_SESSION[\Globals\FILE_ARDUINO_STATUS])) { // Do we have this session set?
+  if ($md5 != $_SESSION[\Globals\FILE_ARDUINO_STATUS]) {
     $changed = true;
-    $_SESSION[\Globals\FILE_BUTTON_STATUS] = $md5;
+    $_SESSION[\Globals\FILE_ARDUINO_STATUS] = $md5;
   }
 } else {
-  $_SESSION[\Globals\FILE_BUTTON_STATUS] = $md5;
+  $_SESSION[\Globals\FILE_ARDUINO_STATUS] = $md5;
 }
 
 echo json_encode([
-  'filename' => \Globals\FILE_BUTTON_STATUS,
+  'filename' => \Globals\FILE_ARDUINO_STATUS,
  	'hasChanged' => $changed
 ]);

@@ -49,15 +49,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     'date' => date("D j M, H:i:s"),
     'white' => $white,
     'blue' => $blue,
+    'starting_up' => 0,
   );
   $status = json_encode($data);
 
-  // Save button status to file
+  // Save Arduino status to file
   set_error_handler('exceptions_error_handler');
   try {
-    file_put_contents(\Globals\FILE_BUTTON_STATUS, $status);
+    file_put_contents(\Globals\FILE_ARDUINO_STATUS, $status);
   } catch (Exception $e) {
-    echo "SERVER ERROR: While saving file `".\Globals\FILE_BUTTON_STATUS."`".PHP_EOL;
+    echo "SERVER ERROR: While saving file `".\Globals\FILE_ARDUINO_STATUS."`".PHP_EOL;
     echo $e->getMessage();
     restore_error_handler();
     exit;
