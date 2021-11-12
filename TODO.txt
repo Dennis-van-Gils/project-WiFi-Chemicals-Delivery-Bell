@@ -22,3 +22,7 @@ x) Add 'send email' functionality using idle/activity timer.
    Automate to send 5 minutes after latest button press.
 
 x) Screen saver should kick in immediately when sending is successful
+
+x) Learn from and implement:
+   https://www.forward.com.au/pfod/ArduinoProgramming/ArduinoStrings/index.html#reboot
+   https://www.instructables.com/Taming-Arduino-Strings-How-to-Avoid-Memory-Issues/
