@@ -44,11 +44,18 @@ Date  : 11-11-2021
 #define Ser Serial
 DvG_SerialCommand sc(Ser);
 
+// String buffer for outgoing message
+#define MSG_LEN 128
+char msg[MSG_LEN] = {"\0"};
+
 // Network vars
 #define WIFI_BEGIN_TIMEOUT 30 // Stop trying to connect after N seconds [s]
+char wifi_status_descr[16] = {"\0"};
 wl_status_t wifi_status;
-String MAC_address;
+String payload;
+String request;
 String IP_address;
+String MAC_address;
 
 // LEDs
 #define PIN_LED_ONBOARD_RED 0  // Inverted. Will mimick the white button
@@ -145,21 +152,21 @@ public:
 Screensaver screensaver(10000, 200);
 
 /*------------------------------------------------------------------------------
-  wifi_status_to_string
+  get_wifi_status_descr
 ------------------------------------------------------------------------------*/
 
 // clang-format off
-String wifi_status_to_string(wl_status_t status) {
+void get_wifi_status_descr(wl_status_t status, char descr[16]) {
   switch (status) {
-    case WL_IDLE_STATUS:      return "IDLE_STATUS";
-    case WL_NO_SSID_AVAIL:    return "NO_SSID_AVAIL";
-    case WL_SCAN_COMPLETED:   return "SCAN_COMPLETED";
-    case WL_CONNECTED:        return "CONNECTED";
-    case WL_CONNECT_FAILED:   return "CONNECT_FAILED";
-    case WL_CONNECTION_LOST:  return "CONNECTION_LOST";
-    case WL_WRONG_PASSWORD:   return "WRONG_PASSWORD";
-    case WL_DISCONNECTED:     return "DISCONNECTED";
-    default:                  return "";
+    case WL_IDLE_STATUS    : snprintf(descr, 16, "%s", "IDLE_STATUS")    ; break;
+    case WL_NO_SSID_AVAIL  : snprintf(descr, 16, "%s", "NO_SSID_AVAIL")  ; break;
+    case WL_SCAN_COMPLETED : snprintf(descr, 16, "%s", "SCAN_COMPLETED") ; break;
+    case WL_CONNECTED      : snprintf(descr, 16, "%s", "CONNECTED")      ; break;
+    case WL_CONNECT_FAILED : snprintf(descr, 16, "%s", "CONNECT_FAILED") ; break;
+    case WL_CONNECTION_LOST: snprintf(descr, 16, "%s", "CONNECTION_LOST"); break;
+    case WL_WRONG_PASSWORD : snprintf(descr, 16, "%s", "WRONG_PASSWORD") ; break;
+    case WL_DISCONNECTED   : snprintf(descr, 16, "%s", "DISCONNECTED")   ; break;
+    default                : snprintf(descr, 16, "%s", "")               ; break;
   }
 }
 // clang-format on
@@ -168,7 +175,7 @@ String wifi_status_to_string(wl_status_t status) {
   infinite_loop
 ------------------------------------------------------------------------------*/
 
-void infinite_loop(String final_msg = "") {
+void infinite_loop(const char *final_msg) {
   // Infinite loop without escape, while displaying a final error message on the
   // OLED screen flashing on and off to prevent OLED burn-in.
   bool toggle = true;
@@ -194,7 +201,8 @@ void infinite_loop(String final_msg = "") {
   http_post
 ------------------------------------------------------------------------------*/
 
-bool http_post(String url, String post_request, String post_expected_reply) {
+bool http_post(const String &url, const String &post_request,
+               const String &post_expected_reply) {
   /* Send a HTTP POST request to the web server. Will handle errors and also
   checks for a correct POST reply. Shows info on the serial monitor and OLED
   display.
@@ -204,7 +212,6 @@ bool http_post(String url, String post_request, String post_expected_reply) {
   bool success = false;
   HTTPClient http;
   WiFiClientSecure client;
-  String payload;
   int http_code;
 
   display.clearDisplay();
@@ -215,8 +222,10 @@ bool http_post(String url, String post_request, String post_expected_reply) {
   wifi_status = WiFi.status();
   if (wifi_status == WL_CONNECTED) {
     Ser.println("Request");
-    Ser.println("  " + url);
-    Ser.println("  " + post_request);
+    Ser.print("  ");
+    Ser.println(url);
+    Ser.print("  ");
+    Ser.println(post_request);
 
     client.setInsecure(); // Secure is overkill for our project
     http.begin(client, url);
@@ -245,17 +254,20 @@ bool http_post(String url, String post_request, String post_expected_reply) {
 
       } else {
         Ser.println("SERVER ERROR: Unexpected reply from web server.");
-        Ser.println("Was expecting: " + post_expected_reply);
+        Ser.print("Was expecting: ");
+        Ser.println(post_expected_reply);
         display.clearDisplay();
         display.setCursor(0, 0);
         display.print("SERVER ERR\nUNEXPREPLY");
       }
 
     } else { // if (http_code == 200)
-      Ser.println("HTTP ERROR " + String(http_code));
+      Ser.print("HTTP ERROR ");
+      Ser.println(http_code);
       display.clearDisplay();
       display.setCursor(0, 0);
-      display.println("HTTP ERR\n" + String(http_code));
+      display.println("HTTP ERROR");
+      display.println(http_code);
     }
 
     http.end();
@@ -264,8 +276,10 @@ bool http_post(String url, String post_request, String post_expected_reply) {
     // WiFi got disconnected
     // TODO: Try to reconnect?
     display.setTextSize(1);
-    infinite_loop("WiFi disconnected. Press reset.\n" +
-                  wifi_status_to_string(wifi_status));
+    get_wifi_status_descr(wifi_status, wifi_status_descr);
+    snprintf(msg, MSG_LEN, "WiFi disconnected:\n%s\nPress reset.",
+             wifi_status_descr);
+    infinite_loop(msg);
   }
 
   Ser.println("");
@@ -281,7 +295,9 @@ bool http_post(String url, String post_request, String post_expected_reply) {
 void send_starting_up() {
   /* Signal the web server that the Arduino has (re)started.
    */
-  http_post(url_starting_up, "key=" + MAC_address, "1");
+  request = "key=";
+  request += MAC_address;
+  http_post(url_starting_up, request, "1");
   screensaver.reset();
 }
 
@@ -292,7 +308,9 @@ void send_starting_up() {
 void send_email(bool restarted = false) {
   /* Signal the web server to send out emails.
    */
-  http_post(url_send_email, "key=" + MAC_address, "1");
+  request = "key=";
+  request += MAC_address;
+  http_post(url_send_email, request, "1");
   screensaver.reset();
 }
 
@@ -304,15 +322,15 @@ void send_buttons(bool white_state, bool blue_state) {
   /* Send out new button states to the web server.
    */
   char expected_reply[4];
-  sprintf(expected_reply, "%d %d", white_LED_is_on, blue_LED_is_on);
+  snprintf(expected_reply, 4, "%d %d", white_LED_is_on, blue_LED_is_on);
 
-  // clang-format off
-  http_post(url_button_pressed,
-            "key=" + MAC_address +
-            "&white=" + String(white_LED_is_on) +
-            "&blue=" + String(blue_LED_is_on),
-            expected_reply);
-  // clang-format on
+  request = "key=";
+  request += MAC_address;
+  request += "&white=";
+  request += white_LED_is_on;
+  request += "&blue=";
+  request += blue_LED_is_on;
+  http_post(url_button_pressed, request, expected_reply);
   screensaver.reset();
 }
 
@@ -322,6 +340,12 @@ void send_buttons(bool white_state, bool blue_state) {
 
 void setup() {
   Ser.begin(9600);
+
+  // Reserve memory for Strings
+  payload.reserve(512);   // Large enough to hold potential 404/503 HTML page
+  request.reserve(40);    // Largest: 'key=00:AA:00:AA:00:AA&white=0&blue=0'
+  IP_address.reserve(46); // Large enough for IPv6
+  MAC_address.reserve(18);
 
   // LEDs
   pinMode(PIN_LED_ONBOARD_RED, OUTPUT);
@@ -337,7 +361,8 @@ void setup() {
 
   // Show MAC address
   MAC_address = WiFi.macAddress();
-  Ser.println("\n\nMAC address: " + MAC_address);
+  Ser.print("\n\nMAC address: ");
+  Ser.println(MAC_address);
 
   // OLED display:  128 x 32 px
   // Textsize  1 :    6 x  8
@@ -349,12 +374,14 @@ void setup() {
 
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println("MAC " + MAC_address);
+  display.print("MAC ");
+  display.println(MAC_address);
 
   // Check WiFi config
   if (strcmp(ssid, "") == 0) {
-    infinite_loop(
-        "No WiFi configured.\nEdit wifi_settings.h,\nrecompile and flash.");
+    infinite_loop("No WiFi configured.\n"
+                  "Edit wifi_settings.h,\n"
+                  "recompile and flash.");
   }
 
   // Connect to WiFi
@@ -390,8 +417,10 @@ void setup() {
 
       if (now - tick_0 > WIFI_BEGIN_TIMEOUT * 1e3) {
         WiFi.disconnect();
-        infinite_loop("Could not connect to WiFi. Press reset.\n" +
-                      wifi_status_to_string(wifi_status));
+        get_wifi_status_descr(wifi_status, wifi_status_descr);
+        snprintf(msg, MSG_LEN, "Could not connect to WiFi:\n%s\nPress reset.",
+                 wifi_status_descr);
+        infinite_loop(msg);
       }
     }
 
@@ -413,8 +442,10 @@ void setup() {
   // Show obtained IP address
   IP_address = WiFi.localIP().toString();
   Ser.println(" success!");
-  Ser.println("IP address: " + IP_address);
-  display.println("IP  " + IP_address);
+  Ser.print("IP address: ");
+  Ser.println(IP_address);
+  display.print("IP  ");
+  display.println(IP_address);
 
   // Count down
   Ser.print("Starting in 4 secs...");
