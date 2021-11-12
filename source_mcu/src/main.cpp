@@ -313,6 +313,7 @@ bool http_post(const String &url, const String &post_http_request,
 void send_starting_up() {
   /* Signal the web server that the Arduino has (re)started.
    */
+  Ser.println("STARTING UP\n-----------");
   http_request = "key=";
   http_request += mac_address;
   http_post(url_starting_up, http_request, "1");
@@ -326,6 +327,7 @@ void send_starting_up() {
 void send_email(bool restarted = false) {
   /* Signal the web server to send out emails.
    */
+  Ser.println("EMAIL\n-----");
   http_request = "key=";
   http_request += mac_address;
   http_post(url_send_email, http_request, "1");
@@ -536,8 +538,14 @@ void loop() {
     } else if (strcmp(strCmd, "e") == 0) {
       send_email();
 
-    } else if (strcmp(strCmd, "r") == 0) {
+    } else if (strcmp(strCmd, "s") == 0) {
       send_starting_up();
+
+    } else if (strcmp(strCmd, "?") == 0) {
+      Ser.print(white_LED_is_on);
+      Ser.print(" ");
+      Ser.print(blue_LED_is_on);
+      Ser.println("\n");
     }
   }
 
