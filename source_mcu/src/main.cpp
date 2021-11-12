@@ -17,7 +17,7 @@ NOTE:
 
 GitHub: https://github.com/Dennis-van-Gils/project-WiFi-Chemicals-Delivery-Bell
 Author: Dennis van Gils
-Date  : 11-11-2021
+Date  : 12-11-2021
  */
 
 #include <Arduino.h>
@@ -31,8 +31,10 @@ Date  : 11-11-2021
 #include <Adafruit_GFX.h>
 #include <Adafruit_I2CDevice.h>
 #include <Adafruit_SSD1306.h>
-#include <DvG_SerialCommand.h>
 #include <avdweb_Switch.h>
+
+#include <DvG_SerialCommand.h>
+#include <StringReserveCheck.h>
 
 #if __has_include("wifi_settings.h")
 #  include <wifi_settings.h>
@@ -53,9 +55,13 @@ char msg[MSG_LEN] = {"\0"};
 char wifi_status_descr[16] = {"\0"};
 wl_status_t wifi_status;
 String payload;
+StringReserveCheck SRC_payload;
 String request;
+StringReserveCheck SRC_request;
 String IP_address;
+StringReserveCheck SRC_IP_address;
 String MAC_address;
+StringReserveCheck SRC_MAC_address;
 
 // LEDs
 #define PIN_LED_ONBOARD_RED 0  // Inverted. Will mimick the white button
@@ -179,7 +185,6 @@ void infinite_loop(const char *final_msg) {
   // Infinite loop without escape, while displaying a final error message on the
   // OLED screen flashing on and off to prevent OLED burn-in.
   bool toggle = true;
-
   Ser.println(final_msg);
 
   while (true) {
@@ -342,10 +347,23 @@ void setup() {
   Ser.begin(9600);
 
   // Reserve memory for Strings
-  payload.reserve(512);   // Large enough to hold potential 404/503 HTML page
-  request.reserve(40);    // Largest: 'key=00:AA:00:AA:00:AA&white=0&blue=0'
+  payload.reserve(512); // Large enough to hold potential 404/503 HTML page
+  SRC_payload.init(payload, Ser);
+  request.reserve(40); // Largest: 'key=00:AA:00:AA:00:AA&white=0&blue=0'
+  SRC_request.init(request, Ser);
   IP_address.reserve(46); // Large enough for IPv6
-  MAC_address.reserve(18);
+  SRC_IP_address.init(IP_address, Ser);
+  // MAC_address.reserve(18);
+  // SRC_MAC_address.init(MAC_address, Ser);
+  if (!MAC_address.reserve(18)) {
+    while (1) {
+      Ser.println(F("Strings out-of-memory"));
+      delay(3000);
+    }
+  }
+  if (!SRC_MAC_address.init(MAC_address, Ser)) {
+    Ser.println(F("Memory Low after reserves()"));
+  }
 
   // LEDs
   pinMode(PIN_LED_ONBOARD_RED, OUTPUT);
@@ -503,6 +521,9 @@ void loop() {
 
     } else if (strcmp(strCmd, "e") == 0) {
       send_email();
+
+    } else if (strcmp(strCmd, "r") == 0) {
+      send_starting_up();
     }
   }
 
