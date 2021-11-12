@@ -58,14 +58,14 @@ wl_status_t wifi_status;
 // Prevent String() from fragmenting the heap (too much):
 // https://www.forward.com.au/pfod/ArduinoProgramming/ArduinoStrings/index.html#reboot
 // https://www.instructables.com/Taming-Arduino-Strings-How-to-Avoid-Memory-Issues/
-String payload;
-StringReserveCheck SRC_payload;
-String request;
-StringReserveCheck SRC_request;
-String IP_address;
-StringReserveCheck SRC_IP_address;
-String MAC_address;
-StringReserveCheck SRC_MAC_address;
+String http_payload;
+StringReserveCheck http_payload_SRC;
+String http_request;
+StringReserveCheck http_request_SRC;
+String ip_address;
+StringReserveCheck ip_address_SRC;
+String mac_address;
+StringReserveCheck mac_address_SRC;
 
 // LEDs
 #define PIN_LED_ONBOARD_RED 0  // Inverted. Will mimick the white button
@@ -210,7 +210,7 @@ void infinite_loop(const char *final_msg) {
   http_post
 ------------------------------------------------------------------------------*/
 
-bool http_post(const String &url, const String &post_request,
+bool http_post(const String &url, const String &post_http_request,
                const String &post_expected_reply) {
   /* Send a HTTP POST request to the web server. Will handle errors and also
   checks for a correct POST reply. Shows info on the serial monitor and OLED
@@ -237,30 +237,30 @@ bool http_post(const String &url, const String &post_request,
     Ser.print("  ");
     Ser.println(url);
     Ser.print("  ");
-    Ser.println(post_request);
+    Ser.println(post_http_request);
 
     client.setInsecure(); // Secure is overkill for our project
     http.begin(client, url);
     http.addHeader("Content-Type", "application/x-www-form-urlencoded");
 
-    http_code = http.POST(post_request);
-    payload = http.getString();
+    http_code = http.POST(post_http_request);
+    http_payload = http.getString();
 
     // yield();
     delay(1);
 
     Ser.println("Reply");
     Ser.println("  \"\"\"");
-    Ser.println(payload);
+    Ser.println(http_payload);
     Ser.println("  \"\"\"");
 
     if (http_code == 200) {
-      if (strcmp(payload.c_str(), post_expected_reply.c_str()) == 0) {
+      if (strcmp(http_payload.c_str(), post_expected_reply.c_str()) == 0) {
         Ser.println("Success");
         display.println("Success");
         success = true;
 
-      } else if (strcmp(payload.c_str(), "Invalid key") == 0) {
+      } else if (strcmp(http_payload.c_str(), "Invalid key") == 0) {
         Ser.println("SERVER ERROR: Invalid key received by web server.");
         Ser.println("See 'Globals.php' on the web server.");
         display.clearDisplay();
@@ -313,9 +313,9 @@ bool http_post(const String &url, const String &post_request,
 void send_starting_up() {
   /* Signal the web server that the Arduino has (re)started.
    */
-  request = "key=";
-  request += MAC_address;
-  http_post(url_starting_up, request, "1");
+  http_request = "key=";
+  http_request += mac_address;
+  http_post(url_starting_up, http_request, "1");
   screensaver.reset();
 }
 
@@ -326,9 +326,9 @@ void send_starting_up() {
 void send_email(bool restarted = false) {
   /* Signal the web server to send out emails.
    */
-  request = "key=";
-  request += MAC_address;
-  http_post(url_send_email, request, "1");
+  http_request = "key=";
+  http_request += mac_address;
+  http_post(url_send_email, http_request, "1");
   screensaver.reset();
 }
 
@@ -342,13 +342,13 @@ void send_buttons(bool white_state, bool blue_state) {
   char expected_reply[4];
   snprintf(expected_reply, 4, "%d %d", white_LED_is_on, blue_LED_is_on);
 
-  request = "key=";
-  request += MAC_address;
-  request += "&white=";
-  request += white_LED_is_on;
-  request += "&blue=";
-  request += blue_LED_is_on;
-  http_post(url_button_pressed, request, expected_reply);
+  http_request = "key=";
+  http_request += mac_address;
+  http_request += "&white=";
+  http_request += white_LED_is_on;
+  http_request += "&blue=";
+  http_request += blue_LED_is_on;
+  http_post(url_button_pressed, http_request, expected_reply);
   screensaver.reset();
 }
 
@@ -360,21 +360,21 @@ void setup() {
   Ser.begin(9600);
 
   // Prevent String() from fragmenting the heap (too much)
-  payload.reserve(512); // Large enough to hold potential 404/503 HTML page
-  SRC_payload.init(payload, Ser);
-  request.reserve(40); // Largest: 'key=00:AA:00:AA:00:AA&white=0&blue=0'
-  SRC_request.init(request, Ser);
-  IP_address.reserve(46); // Large enough for IPv6
-  SRC_IP_address.init(IP_address, Ser);
-  // MAC_address.reserve(18);
-  // SRC_MAC_address.init(MAC_address, Ser);
-  if (!MAC_address.reserve(18)) {
+  http_payload.reserve(512); // Large enough to hold potential 404/503 HTML page
+  http_payload_SRC.init(http_payload, Ser);
+  http_request.reserve(40); // Largest: 'key=00:AA:00:AA:00:AA&white=0&blue=0'
+  http_request_SRC.init(http_request, Ser);
+  ip_address.reserve(46); // Large enough for IPv6
+  ip_address_SRC.init(ip_address, Ser);
+  // mac_address.reserve(18);
+  // mac_address_SRC.init(mac_address, Ser);
+  if (!mac_address.reserve(18)) {
     while (1) {
       Ser.println(F("Strings out-of-memory"));
       delay(3000);
     }
   }
-  if (!SRC_MAC_address.init(MAC_address, Ser)) {
+  if (!mac_address_SRC.init(mac_address, Ser)) {
     Ser.println(F("Memory Low after reserves()"));
   }
 
@@ -391,9 +391,9 @@ void setup() {
   digitalWrite(PIN_LED_BTN_BLUE, HIGH);
 
   // Show MAC address
-  MAC_address = WiFi.macAddress();
+  mac_address = WiFi.macAddress();
   Ser.print("\n\nMAC address: ");
-  Ser.println(MAC_address);
+  Ser.println(mac_address);
 
   // OLED display:  128 x 32 px
   // Textsize  1 :    6 x  8
@@ -406,7 +406,7 @@ void setup() {
   display.clearDisplay();
   display.setCursor(0, 0);
   display.print("MAC ");
-  display.println(MAC_address);
+  display.println(mac_address);
 
   // Check WiFi config
   if (strcmp(ssid, "") == 0) {
@@ -472,12 +472,12 @@ void setup() {
   }
 
   // Show obtained IP address
-  IP_address = WiFi.localIP().toString();
+  ip_address = WiFi.localIP().toString();
   Ser.println(" success!");
   Ser.print("IP address: ");
-  Ser.println(IP_address);
+  Ser.println(ip_address);
   display.print("IP  ");
-  display.println(IP_address);
+  display.println(ip_address);
 
   // Count down
   Ser.print("Starting in 4 secs...");

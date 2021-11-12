@@ -23,6 +23,16 @@ x) Add 'send email' functionality using idle/activity timer.
 
 x) Screen saver should kick in immediately when sending is successful
 
-x) Learn from and implement:
-   https://www.forward.com.au/pfod/ArduinoProgramming/ArduinoStrings/index.html#reboot
-   https://www.instructables.com/Taming-Arduino-Strings-How-to-Avoid-Memory-Issues/
+x) Improve button handling
+    bool request_LED_white;
+    bool state_LED_white;
+    bool prev_state_LED_white;
+   
+    bool request_LED_blue;
+    bool state_LED_blue;
+    bool prev_state_LED_blue;
+   
+    switch_white.poll();
+    if (switch_white.pushed()) {
+      request_LED_white = !state_LED_white;
+    }
