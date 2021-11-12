@@ -54,6 +54,10 @@ char msg[MSG_LEN] = {"\0"};
 #define WIFI_BEGIN_TIMEOUT 30 // Stop trying to connect after N seconds [s]
 char wifi_status_descr[16] = {"\0"};
 wl_status_t wifi_status;
+
+// Prevent String() from fragmenting the heap (too much):
+// https://www.forward.com.au/pfod/ArduinoProgramming/ArduinoStrings/index.html#reboot
+// https://www.instructables.com/Taming-Arduino-Strings-How-to-Avoid-Memory-Issues/
 String payload;
 StringReserveCheck SRC_payload;
 String request;
@@ -355,7 +359,7 @@ void send_buttons(bool white_state, bool blue_state) {
 void setup() {
   Ser.begin(9600);
 
-  // Reserve memory for Strings
+  // Prevent String() from fragmenting the heap (too much)
   payload.reserve(512); // Large enough to hold potential 404/503 HTML page
   SRC_payload.init(payload, Ser);
   request.reserve(40); // Largest: 'key=00:AA:00:AA:00:AA&white=0&blue=0'
