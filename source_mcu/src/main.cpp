@@ -224,6 +224,9 @@ bool http_post(const String &url, const String &post_request,
   display.println("Sending...");
   display.display();
 
+  // yield();
+  delay(1);
+
   wifi_status = WiFi.status();
   if (wifi_status == WL_CONNECTED) {
     Ser.println("Request");
@@ -238,6 +241,9 @@ bool http_post(const String &url, const String &post_request,
 
     http_code = http.POST(post_request);
     payload = http.getString();
+
+    // yield();
+    delay(1);
 
     Ser.println("Reply");
     Ser.println("  \"\"\"");
@@ -286,6 +292,9 @@ bool http_post(const String &url, const String &post_request,
              wifi_status_descr);
     infinite_loop(msg);
   }
+
+  // yield();
+  delay(1);
 
   Ser.println("");
   display.display();
@@ -454,7 +463,8 @@ void setup() {
       }
     }
 
-    yield();
+    // yield();
+    delay(1);
   }
 
   // Show obtained IP address
@@ -550,11 +560,16 @@ void loop() {
     states_have_changed = false;
   }
 
-  screensaver.update();
-
   // The ESP8266 mcu has a lot of background processes (WiFi connectivity and
-  // such) that must get computing time without too much long delays in
-  // between. Hence, we must yield to these processes frequently.
-  yield();
-  delay(10); // [ms]
+  // streams) that must get computing time without too much long delays in
+  // between. This is critical to prevent a possible crash and reset of
+  // the ESP8266. Hence, we must yield to these processes frequently.
+  // yield();
+  // EDIT: `delay()` gets redefined by the ESP8266 library to include a call to
+  // `yield()` -- actually, `esp_yield()`. Several sources on the internet state
+  // that their projects work better when calling `delay(1)` instead of straight
+  // `yield()`.
+  delay(1);
+
+  screensaver.update();
 }
