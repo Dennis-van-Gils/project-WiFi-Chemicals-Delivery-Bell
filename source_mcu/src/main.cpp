@@ -225,7 +225,7 @@ bool http_post(const String &url, const String &post_http_request,
 
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.println("Sending...");
+  display.println(F("Sending..."));
   display.display();
 
   // yield();
@@ -233,15 +233,15 @@ bool http_post(const String &url, const String &post_http_request,
 
   wifi_status = WiFi.status();
   if (wifi_status == WL_CONNECTED) {
-    Ser.println("Request");
-    Ser.print("  ");
+    Ser.println(F("Request"));
+    Ser.print(F("  "));
     Ser.println(url);
-    Ser.print("  ");
+    Ser.print(F("  "));
     Ser.println(post_http_request);
 
     client.setInsecure(); // Secure is overkill for our project
     http.begin(client, url);
-    http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+    http.addHeader(F("Content-Type"), F("application/x-www-form-urlencoded"));
 
     http_code = http.POST(post_http_request);
     http_payload = http.getString();
@@ -249,39 +249,39 @@ bool http_post(const String &url, const String &post_http_request,
     // yield();
     delay(1);
 
-    Ser.println("Reply");
-    Ser.println("  \"\"\"");
+    Ser.println(F("Reply"));
+    Ser.println(F("  \"\"\""));
     Ser.println(http_payload);
-    Ser.println("  \"\"\"");
+    Ser.println(F("  \"\"\""));
 
     if (http_code == 200) {
       if (strcmp(http_payload.c_str(), post_expected_reply.c_str()) == 0) {
-        Ser.println("Success");
-        display.println("Success");
+        Ser.println(F("Success"));
+        display.println(F("Success"));
         success = true;
 
       } else if (strcmp(http_payload.c_str(), "Invalid key") == 0) {
-        Ser.println("SERVER ERROR: Invalid key received by web server.");
-        Ser.println("See 'Globals.php' on the web server.");
+        Ser.println(F("SERVER ERROR: Invalid key received by web server."));
+        Ser.println(F("See 'Globals.php' on the web server."));
         display.clearDisplay();
         display.setCursor(0, 0);
-        display.print("SERVER ERR\nINVALIDKEY");
+        display.print(F("SERVER ERR\nINVALIDKEY"));
 
       } else {
-        Ser.println("SERVER ERROR: Unexpected reply from web server.");
-        Ser.print("Was expecting: ");
+        Ser.println(F("SERVER ERROR: Unexpected reply from web server."));
+        Ser.print(F("Was expecting: "));
         Ser.println(post_expected_reply);
         display.clearDisplay();
         display.setCursor(0, 0);
-        display.print("SERVER ERR\nUNEXPREPLY");
+        display.print(F("SERVER ERR\nUNEXPREPLY"));
       }
 
     } else { // if (http_code == 200)
-      Ser.print("HTTP ERROR ");
+      Ser.print(F("HTTP ERROR "));
       Ser.println(http_code);
       display.clearDisplay();
       display.setCursor(0, 0);
-      display.println("HTTP ERROR");
+      display.println(F("HTTP ERROR"));
       display.println(http_code);
     }
 
@@ -313,8 +313,8 @@ bool http_post(const String &url, const String &post_http_request,
 void send_starting_up() {
   /* Signal the web server that the Arduino has (re)started.
    */
-  Ser.println("STARTING UP\n-----------");
-  http_request = "key=";
+  Ser.println(F("STARTING UP\n-----------"));
+  http_request = F("key=");
   http_request += mac_address;
   http_post(url_starting_up, http_request, "1");
   screensaver.reset();
@@ -327,8 +327,8 @@ void send_starting_up() {
 void send_email(bool restarted = false) {
   /* Signal the web server to send out emails.
    */
-  Ser.println("EMAIL\n-----");
-  http_request = "key=";
+  Ser.println(F("EMAIL\n-----"));
+  http_request = F("key=");
   http_request += mac_address;
   http_post(url_send_email, http_request, "1");
   screensaver.reset();
@@ -344,11 +344,11 @@ void send_buttons(bool white_state, bool blue_state) {
   char expected_reply[4];
   snprintf(expected_reply, 4, "%d %d", white_LED_is_on, blue_LED_is_on);
 
-  http_request = "key=";
+  http_request = F("key=");
   http_request += mac_address;
-  http_request += "&white=";
+  http_request += F("&white=");
   http_request += white_LED_is_on;
-  http_request += "&blue=";
+  http_request += F("&blue=");
   http_request += blue_LED_is_on;
   http_post(url_button_pressed, http_request, expected_reply);
   screensaver.reset();
@@ -394,7 +394,7 @@ void setup() {
 
   // Show MAC address
   mac_address = WiFi.macAddress();
-  Ser.print("\n\nMAC address: ");
+  Ser.print(F("\n\nMAC address: "));
   Ser.println(mac_address);
 
   // OLED display:  128 x 32 px
@@ -407,7 +407,7 @@ void setup() {
 
   display.clearDisplay();
   display.setCursor(0, 0);
-  display.print("MAC ");
+  display.print(F("MAC "));
   display.println(mac_address);
 
   // Check WiFi config
@@ -418,10 +418,10 @@ void setup() {
   }
 
   // Connect to WiFi
-  Ser.print("Connecting to WiFi network `");
+  Ser.print(F("Connecting to WiFi network `"));
   Ser.print(ssid);
-  Ser.print("`.");
-  display.println("Connecting to WiFi");
+  Ser.print(F("`."));
+  display.println(F("Connecting to WiFi"));
   display.display();
 
   now = millis();
@@ -445,7 +445,7 @@ void setup() {
         break;
       }
 
-      Ser.print(".");
+      Ser.print(F("."));
       // Ser.println(wifi_status);
 
       if (now - tick_0 > WIFI_BEGIN_TIMEOUT * 1e3) {
@@ -475,15 +475,15 @@ void setup() {
 
   // Show obtained IP address
   ip_address = WiFi.localIP().toString();
-  Ser.println(" success!");
-  Ser.print("IP address: ");
+  Ser.println(F(" Success!"));
+  Ser.print(F("IP address: "));
   Ser.println(ip_address);
-  display.print("IP  ");
+  display.print(F("IP  "));
   display.println(ip_address);
 
   // Count down
-  Ser.print("Starting in 4 secs...");
-  display.println("Starting in   secs...");
+  Ser.print(F("Starting in 4 secs..."));
+  display.println(F("Starting in   secs..."));
   for (int8_t count_down_secs = 4; count_down_secs > 0; count_down_secs--) {
     display.fillRect(72, 24, 6, 8, 0);
     display.setCursor(72, 24);
@@ -491,7 +491,7 @@ void setup() {
     display.display();
     delay(1000);
   }
-  Ser.println(" done!\n");
+  Ser.println(F(" Done!\n"));
 
   // Turn off all LEDs
   digitalWrite(PIN_LED_ONBOARD_RED, HIGH);
@@ -554,7 +554,7 @@ void loop() {
     white_LED_was_on = white_LED_is_on;
     digitalWrite(PIN_LED_BTN_WHITE, white_LED_is_on);
     digitalWrite(PIN_LED_ONBOARD_RED, !white_LED_is_on);
-    Ser.println("WHITE\n-----");
+    Ser.println(F("WHITE\n-----"));
     states_have_changed = true;
   }
 
@@ -562,7 +562,7 @@ void loop() {
     blue_LED_was_on = blue_LED_is_on;
     digitalWrite(PIN_LED_BTN_BLUE, blue_LED_is_on);
     digitalWrite(PIN_LED_ONBOARD_BLUE, !blue_LED_is_on);
-    Ser.println("BLUE\n-----");
+    Ser.println(F("BLUE\n-----"));
     states_have_changed = true;
   }
 
