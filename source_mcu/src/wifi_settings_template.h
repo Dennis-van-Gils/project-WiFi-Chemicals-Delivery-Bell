@@ -1,47 +1,35 @@
 #ifndef WIFI_SETTINGS_H
 #define WIFI_SETTINGS_H
 
-/*
-`wifi_settings.h` should contain the user variables specific to your WiFi
+/* `wifi_settings.h` should contain the user variables specific to your WiFi
 network, password and webpage script locations. You can use the provided
-template `wifi_settings_template.h` which you fill out and save as
+template `wifi_settings_template.h` to fill out your settings and save as
 `wifi_settings.h`. You need to compile and upload this source code to the
 Arduino whenever you make changes to it.
 */
 
-/*
-The SSID of the WiFi network that the Arduino should connect to.
-E.g.: "UThings" for the University of Twente.
+/* The SSID of the WiFi network that the Arduino should connect to.
+E.g. "UThings" for the University of Twente.
 */
 const char *ssid = "";
 
-/*
-Specific to the UThings network (and perhaps other IoT networks as well):
+/* Specific to the UThings network (and perhaps other IoT networks as well):
 The Arduino should get a unique 'pre-shared key' password from the network
 administrator (LISA). This is needed to allow the Arduino easy access to the
 UThings network. You need to give LISA the MAC address of your Arduino. They
 will then couple this MAC address with a unique key which they will send to you.
 Keep this password secret.
 
-You can upload this source code to the Arduino and leave the password blank.
-The MAC address of the Arduino will be shown on the OLED display and in a serial
-monitor (like PuTTY for Windows) during boot.
+To get the MAC address of the Arduino you can upload this source code to the
+Arduino and leave the password blank. Both the OLED display and a serial
+monitor (like PuTTY for Windows) will then show you the MAC address at startup
+of the Arduino.
 */
 const char *password = "";
 
-// The URL to the PHP script on your web server that will initialize the web
-// server whenever the Arduino (re)starts.
-// E.g. "https://[your web host]/chemicals_delivery/php/arduino_starting_up.php"
-const char *url_starting_up = "";
-
-// The URL to the PHP script on your web server that will handle the button
-// presses.
-// E.g. "https://[your web host]/chemicals_delivery/php/button_pressed.php"
-const char *url_button_pressed = "";
-
-// The URL to the PHP script on your web server that will handle sending out
-// emails.
-// E.g. "https://[your web host]/chemicals_delivery/php/send_email.php"
-const char *url_send_email = "";
+/* The URL to your website serving the chemicals delivery application.
+E.g. "https://pof.tnw.utwente.nl/chemicals_delivery"
+*/
+const char *url_website = "";
 
 #endif

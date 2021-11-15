@@ -55,7 +55,7 @@ char msg[MSG_LEN] = {"\0"};
 char wifi_status_descr[16] = {"\0"};
 wl_status_t wifi_status;
 
-// Prevent String() from fragmenting the heap (too much):
+// Prevent String() from fragmenting the heap
 // https://www.forward.com.au/pfod/ArduinoProgramming/ArduinoStrings/index.html#reboot
 // https://www.instructables.com/Taming-Arduino-Strings-How-to-Avoid-Memory-Issues/
 String http_payload;
@@ -79,17 +79,6 @@ Switch switch_blue = Switch(PIN_BUTTON_SWITCH_BLUE, INPUT_PULLUP);
 #define PIN_BUTTON_LED_WHITE 14
 #define PIN_BUTTON_LED_BLUE 16
 
-// Request to turn LEDs on or off. Will be granted if the communication with the
-// web server was successful. This ensures that both the Arduino and web server
-// side show the same LED states.
-static bool request_is_pending = false;
-static bool request_LED_white = false; // True: Turn on, False: Turn off.
-static bool request_LED_blue = false;  // True: Turn on, False: Turn off.
-
-// Granted LED states
-static bool state_LED_white = false; // True: Turned on, False: Turned off.
-static bool state_LED_blue = false;  // True: Turned on, False: Turned off.
-
 void write_LED_white(bool state) {
   digitalWrite(PIN_BUTTON_LED_WHITE, state);
   digitalWrite(PIN_ONBOARD_LED_RED, !state); // Mimick white button LED
@@ -99,6 +88,25 @@ void write_LED_blue(bool state) {
   digitalWrite(PIN_BUTTON_LED_BLUE, state);
   digitalWrite(PIN_ONBOARD_LED_BLUE, !state); // Mimick blue button LED
 }
+
+// Request to turn LEDs on or off. Will be granted if the communication with the
+// web server was successful. This ensures that both the Arduino and web server
+// side show the same LED states.
+static bool request_is_pending;
+static bool request_LED_white; // True: Turn on, False: Turn off.
+static bool request_LED_blue;  // True: Turn on, False: Turn off.
+
+// Granted LED states
+static bool state_LED_white; // True: Turned on, False: Turned off.
+static bool state_LED_blue;  // True: Turned on, False: Turned off.
+
+// Legacy LED states
+// These states are used to detect a change over a longer (5 minute) interval
+// before an email will be send out. This allows the user to revert back an
+// (erroneous) button push and prevents an email from being send out if the
+// state has reverted to its `legacy` state in the mean time. Prevents spam.
+static bool legacy_state_LED_white;
+static bool legacy_state_LED_blue;
 
 // OLED display
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
@@ -118,11 +126,11 @@ const unsigned char img_flask[] PROGMEM = {
     0x03, 0x98, 0x61, 0xc0, 0x03, 0x80, 0x01, 0xc0, 0x03, 0x00, 0x00, 0xc0,
     0x03, 0xff, 0xff, 0xc0, 0x03, 0xff, 0xff, 0xc0};
 
-// Timers
-uint32_t now = 0;
-uint32_t tick_0 = 0;
-uint32_t tick_1 = 0;
-uint32_t tick_2 = 0;
+// Construct full URLs from `wifi_settings.h`
+const int URL_MAXLEN = 256;
+char url_starting_up[URL_MAXLEN];
+char url_button_pressed[URL_MAXLEN];
+char url_send_email[URL_MAXLEN];
 
 /*------------------------------------------------------------------------------
   Screensaver
@@ -345,6 +353,8 @@ bool send_starting_up() {
   request_LED_blue = false;
   state_LED_white = false;
   state_LED_blue = false;
+  legacy_state_LED_white = false;
+  legacy_state_LED_blue = false;
   write_LED_white(false);
   write_LED_blue(false);
 
@@ -403,6 +413,12 @@ bool send_buttons(bool white, bool blue) {
 
 void setup() {
   Ser.begin(9600);
+
+  // Construct full URLs from `wifi_settings.h`
+  snprintf(url_starting_up, URL_MAXLEN, "%s/php/starting_up.php", url_website);
+  snprintf(url_send_email, URL_MAXLEN, "%s/php/send_email.php", url_website);
+  snprintf(url_button_pressed, URL_MAXLEN, "%s/php/button_pressed.php",
+           url_website);
 
   // Prevent String() from fragmenting the heap
   http_payload.reserve(512); // Large enough to hold potential 404/503 HTML page
@@ -465,14 +481,14 @@ void setup() {
   display.println(F("Connecting to WiFi"));
   display.display();
 
-  now = millis();
-  tick_0 = now;
-  tick_1 = now;
-  tick_2 = now;
-
   // Activity animation on OLED screen
   const char activity[] = "|/-\\";
   byte idx_activity = 0;
+
+  uint32_t now = millis();
+  uint32_t tick_0 = now;
+  uint32_t tick_1 = now;
+  uint32_t tick_2 = now;
 
   wifi_status = WiFi.begin(ssid, password);
   while (true) {
