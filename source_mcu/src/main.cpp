@@ -103,9 +103,9 @@ static bool state_LED_blue;  // True: Turned on, False: Turned off.
 // OLED display
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
-// Bitmap: 'Flask', 32x32px
 // https://diyusthad.com/image2cpp
-const unsigned char img_flask[] PROGMEM = {
+// Bitmap: 'Flask', 32x32px
+const uint8_t img_flask[] PROGMEM = {
     0x00, 0x01, 0x80, 0x00, 0x00, 0x01, 0x80, 0x00, 0x00, 0x01, 0x80, 0x00,
     0x00, 0x1d, 0x80, 0x00, 0x00, 0x3f, 0x80, 0x00, 0x00, 0x3f, 0xb8, 0x00,
     0x00, 0x3f, 0xfc, 0x00, 0x00, 0x1f, 0xfc, 0x00, 0x00, 0x07, 0xfc, 0x00,
@@ -118,11 +118,77 @@ const unsigned char img_flask[] PROGMEM = {
     0x03, 0x98, 0x61, 0xc0, 0x03, 0x80, 0x01, 0xc0, 0x03, 0x00, 0x00, 0xc0,
     0x03, 0xff, 0xff, 0xc0, 0x03, 0xff, 0xff, 0xc0};
 
+// Bitmap: 'Email', 32x32px
+const uint8_t img_email[] PROGMEM = {
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xf0, 0x00, 0x00, 0x0f, 0xe7, 0xff, 0xff, 0xe7, 0xe3, 0xff, 0xff, 0xc7,
+    0xe9, 0xff, 0xff, 0x97, 0xec, 0xff, 0xff, 0x37, 0xee, 0x7f, 0xfe, 0x77,
+    0xef, 0x3f, 0xfc, 0xf7, 0xef, 0x9f, 0xf9, 0xf7, 0xef, 0xcf, 0xf3, 0xf7,
+    0xef, 0xe7, 0xe7, 0xf7, 0xef, 0xf3, 0xcf, 0xf7, 0xef, 0xf1, 0x8f, 0xf7,
+    0xef, 0xec, 0x37, 0xf7, 0xef, 0xde, 0x7b, 0xf7, 0xef, 0xbf, 0xfd, 0xf7,
+    0xef, 0x7f, 0xfe, 0xf7, 0xee, 0xff, 0xff, 0x77, 0xed, 0xff, 0xff, 0xb7,
+    0xe1, 0xff, 0xff, 0x87, 0xf0, 0x00, 0x00, 0x0f, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff,
+    0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
+
 // To construct full URLs from `wifi_settings.h`
 const int URL_MAXLEN = 256;
 char url_starting_up[URL_MAXLEN];
 char url_button_pressed[URL_MAXLEN];
 char url_send_email[URL_MAXLEN];
+
+/*------------------------------------------------------------------------------
+  EmailScheduler
+------------------------------------------------------------------------------*/
+
+class EmailScheduler {
+private:
+  uint32_t T_delay = EMAIL_DELAY_MINUTES * 60 * 1e3;
+  uint32_t last_bump;
+
+  // Legacy LED states
+  // These states are used to detect a change over a longer (5 minute) interval
+  // before an email will be send out. This allows the user to revert back an
+  // (erroneous) button push and prevents an email from being send out if the
+  // state has reverted to its `legacy` state in the mean time. Prevents spam.
+  bool legacy_state_LED_white;
+  bool legacy_state_LED_blue;
+
+public:
+  bool pending_email;
+
+  EmailScheduler() { reset(); }
+
+  void reset() {
+    last_bump = millis();
+    pending_email = false;
+    legacy_state_LED_white = state_LED_white;
+    legacy_state_LED_blue = state_LED_blue;
+  }
+
+  void bump() {
+    if ((legacy_state_LED_white == state_LED_white) &
+        (legacy_state_LED_blue == state_LED_blue)) {
+      pending_email = false;
+    } else {
+      last_bump = millis();
+      pending_email = true;
+    }
+    Ser.print("Email pending: ");
+    Ser.println(pending_email ? "True\n" : "False\n");
+  }
+
+  bool poll() {
+    if ((pending_email) & (millis() - last_bump > T_delay)) {
+      reset();
+      return true;
+    }
+    return false;
+  }
+};
+
+EmailScheduler email_scheduler;
 
 /*------------------------------------------------------------------------------
   Screensaver
@@ -168,73 +234,26 @@ public:
     // otherwise leave the screen alone and continue waiting.
     now = millis();
 
+    const uint8_t *img =
+        (email_scheduler.pending_email ? img_email : img_flask);
+
     if ((now - last_activity > T_wait) & (now - last_draw > T_frame)) {
+      // Scroll left-to-right
       display.clearDisplay();
-      display.drawBitmap(x_pos, 0, img_flask, 32, 32, WHITE);
+      display.drawBitmap(x_pos, 0, img, 32, 32, WHITE);
+      if (x_pos > 127 - 32) {
+        display.drawBitmap(x_pos - 128, 0, img, 32, 32, WHITE);
+      }
+      if (++x_pos == 128) {
+        x_pos = 0;
+      }
       display.display();
       last_draw = now;
-
-      // Scroll animation left to right
-      x_pos++;
-      if (x_pos > 121) {
-        x_pos = -25;
-      }
     }
   }
 };
 
 Screensaver screensaver(30000, 200);
-
-/*------------------------------------------------------------------------------
-  EmailScheduler
-------------------------------------------------------------------------------*/
-
-class EmailScheduler {
-private:
-  uint32_t T_delay = EMAIL_DELAY_MINUTES * 60 * 1e3;
-  uint32_t last_bump;
-
-  // Legacy LED states
-  // These states are used to detect a change over a longer (5 minute) interval
-  // before an email will be send out. This allows the user to revert back an
-  // (erroneous) button push and prevents an email from being send out if the
-  // state has reverted to its `legacy` state in the mean time. Prevents spam.
-  bool pending_email;
-  bool legacy_state_LED_white;
-  bool legacy_state_LED_blue;
-
-public:
-  EmailScheduler() { reset(); }
-
-  void reset() {
-    last_bump = millis();
-    pending_email = false;
-    legacy_state_LED_white = state_LED_white;
-    legacy_state_LED_blue = state_LED_blue;
-  }
-
-  void bump() {
-    if ((legacy_state_LED_white == state_LED_white) &
-        (legacy_state_LED_blue == state_LED_blue)) {
-      pending_email = false;
-    } else {
-      last_bump = millis();
-      pending_email = true;
-    }
-    Ser.print("Email pending: ");
-    Ser.println(pending_email ? "True\n" : "False\n");
-  }
-
-  bool poll() {
-    if ((pending_email) & (millis() - last_bump > T_delay)) {
-      reset();
-      return true;
-    }
-    return false;
-  }
-};
-
-EmailScheduler email_scheduler;
 
 /*------------------------------------------------------------------------------
   get_wifi_status_descr
