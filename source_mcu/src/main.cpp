@@ -338,6 +338,16 @@ bool send_starting_up() {
   /* Signal the web server that the Arduino has (re)started.
   Returns true when successful, otherwise false.
    */
+
+  // Reset LEDs to off
+  request_is_pending = false;
+  request_LED_white = false;
+  request_LED_blue = false;
+  state_LED_white = false;
+  state_LED_blue = false;
+  write_LED_white(false);
+  write_LED_blue(false);
+
   Ser.println(F("STARTING UP\n-----------"));
   http_request = F("key=");
   http_request += mac_address;
@@ -394,7 +404,7 @@ bool send_buttons(bool white, bool blue) {
 void setup() {
   Ser.begin(9600);
 
-  // Prevent String() from fragmenting the heap (too much)
+  // Prevent String() from fragmenting the heap
   http_payload.reserve(512); // Large enough to hold potential 404/503 HTML page
   http_payload_SRC.init(http_payload, Ser);
   http_request.reserve(40); // Largest: 'key=00:AA:00:AA:00:AA&white=0&blue=0'
@@ -523,10 +533,6 @@ void setup() {
     delay(1000);
   }
   Ser.println(F(" Done!\n"));
-
-  // Turn off all LEDs
-  write_LED_white(false);
-  write_LED_blue(false);
 
   // Larger OLED text
   display.setTextSize(2);
