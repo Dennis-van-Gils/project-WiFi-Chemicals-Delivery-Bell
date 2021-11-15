@@ -67,22 +67,38 @@ StringReserveCheck ip_address_SRC;
 String mac_address;
 StringReserveCheck mac_address_SRC;
 
-// LEDs
-#define PIN_LED_ONBOARD_RED 0  // Inverted. Will mimick the white button
-#define PIN_LED_ONBOARD_BLUE 2 // Inverted. Will mimick the blue button
-#define PIN_LED_BTN_WHITE 14
-#define PIN_LED_BTN_BLUE 16
-
-bool white_LED_is_on = false;
-bool white_LED_was_on = false;
-bool blue_LED_is_on = false;
-bool blue_LED_was_on = false;
-
 // Switches
-#define PIN_SWITCH_BTN_WHITE 12
-#define PIN_SWITCH_BTN_BLUE 13
-Switch white_switch = Switch(PIN_SWITCH_BTN_WHITE, INPUT_PULLUP);
-Switch blue_switch = Switch(PIN_SWITCH_BTN_BLUE, INPUT_PULLUP);
+#define PIN_BUTTON_SWITCH_WHITE 12
+#define PIN_BUTTON_SWITCH_BLUE 13
+Switch switch_white = Switch(PIN_BUTTON_SWITCH_WHITE, INPUT_PULLUP);
+Switch switch_blue = Switch(PIN_BUTTON_SWITCH_BLUE, INPUT_PULLUP);
+
+// LEDs
+#define PIN_ONBOARD_LED_RED 0  // Inverted. Will mimick the white button LED
+#define PIN_ONBOARD_LED_BLUE 2 // Inverted. Will mimick the blue button LED
+#define PIN_BUTTON_LED_WHITE 14
+#define PIN_BUTTON_LED_BLUE 16
+
+// Request to turn LEDs on or off. Will be granted if the communication with the
+// web server was successful. This ensures that both the Arduino and web server
+// side show the same LED states.
+static bool request_is_pending = false;
+static bool request_LED_white = false; // True: Turn on, False: Turn off.
+static bool request_LED_blue = false;  // True: Turn on, False: Turn off.
+
+// Granted LED states
+static bool state_LED_white = false; // True: Turned on, False: Turned off.
+static bool state_LED_blue = false;  // True: Turned on, False: Turned off.
+
+void write_LED_white(bool state) {
+  digitalWrite(PIN_BUTTON_LED_WHITE, state);
+  digitalWrite(PIN_ONBOARD_LED_RED, !state); // Mimick white button LED
+}
+
+void write_LED_blue(bool state) {
+  digitalWrite(PIN_BUTTON_LED_BLUE, state);
+  digitalWrite(PIN_ONBOARD_LED_BLUE, !state); // Mimick blue button LED
+}
 
 // OLED display
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
@@ -338,20 +354,25 @@ void send_email(bool restarted = false) {
   send_buttons
 ------------------------------------------------------------------------------*/
 
-void send_buttons(bool white_state, bool blue_state) {
+bool send_buttons(bool white, bool blue) {
   /* Send out new button states to the web server.
+
+  Returns true when successful, otherwise false.
    */
   char expected_reply[4];
-  snprintf(expected_reply, 4, "%d %d", white_LED_is_on, blue_LED_is_on);
+  bool success;
 
+  snprintf(expected_reply, 4, "%d %d", white, blue);
   http_request = F("key=");
   http_request += mac_address;
   http_request += F("&white=");
-  http_request += white_LED_is_on;
+  http_request += white;
   http_request += F("&blue=");
-  http_request += blue_LED_is_on;
-  http_post(url_button_pressed, http_request, expected_reply);
+  http_request += blue;
+  success = http_post(url_button_pressed, http_request, expected_reply);
   screensaver.reset();
+
+  return success;
 }
 
 /*------------------------------------------------------------------------------
@@ -381,16 +402,14 @@ void setup() {
   }
 
   // LEDs
-  pinMode(PIN_LED_ONBOARD_RED, OUTPUT);
-  pinMode(PIN_LED_ONBOARD_BLUE, OUTPUT);
-  pinMode(PIN_LED_BTN_WHITE, OUTPUT);
-  pinMode(PIN_LED_BTN_BLUE, OUTPUT);
+  pinMode(PIN_ONBOARD_LED_RED, OUTPUT);
+  pinMode(PIN_ONBOARD_LED_BLUE, OUTPUT);
+  pinMode(PIN_BUTTON_LED_WHITE, OUTPUT);
+  pinMode(PIN_BUTTON_LED_BLUE, OUTPUT);
 
   // Turn on all LEDs at boot
-  digitalWrite(PIN_LED_ONBOARD_RED, LOW);
-  digitalWrite(PIN_LED_ONBOARD_BLUE, LOW);
-  digitalWrite(PIN_LED_BTN_WHITE, HIGH);
-  digitalWrite(PIN_LED_BTN_BLUE, HIGH);
+  write_LED_white(true);
+  write_LED_blue(true);
 
   // Show MAC address
   mac_address = WiFi.macAddress();
@@ -494,10 +513,8 @@ void setup() {
   Ser.println(F(" Done!\n"));
 
   // Turn off all LEDs
-  digitalWrite(PIN_LED_ONBOARD_RED, HIGH);
-  digitalWrite(PIN_LED_ONBOARD_BLUE, HIGH);
-  digitalWrite(PIN_LED_BTN_WHITE, LOW);
-  digitalWrite(PIN_LED_BTN_BLUE, LOW);
+  write_LED_white(false);
+  write_LED_blue(false);
 
   // Larger OLED text
   display.setTextSize(2);
@@ -512,17 +529,16 @@ void setup() {
 
 void loop() {
   char *strCmd; // Incoming serial command string
-  static bool states_have_changed = false;
 
   // Check physical buttons
-  white_switch.poll();
-  if (white_switch.pushed()) {
-    white_LED_is_on = !white_LED_is_on;
+  switch_white.poll();
+  if (switch_white.pushed()) {
+    request_LED_white = !state_LED_white;
   }
 
-  blue_switch.poll();
-  if (blue_switch.pushed()) {
-    blue_LED_is_on = !blue_LED_is_on;
+  switch_blue.poll();
+  if (switch_blue.pushed()) {
+    request_LED_blue = !state_LED_blue;
   }
 
   // Check for incoming serial commands used for debugging
@@ -530,10 +546,10 @@ void loop() {
     strCmd = sc.getCmd();
 
     if (strcmp(strCmd, "w") == 0) {
-      white_LED_is_on = !white_LED_is_on;
+      request_LED_white = !state_LED_white;
 
     } else if (strcmp(strCmd, "b") == 0) {
-      blue_LED_is_on = !blue_LED_is_on;
+      request_LED_blue = !state_LED_blue;
 
     } else if (strcmp(strCmd, "e") == 0) {
       send_email();
@@ -542,34 +558,40 @@ void loop() {
       send_starting_up();
 
     } else if (strcmp(strCmd, "?") == 0) {
-      Ser.print(white_LED_is_on);
+      Ser.print(state_LED_white);
       Ser.print(" ");
-      Ser.print(blue_LED_is_on);
+      Ser.print(state_LED_blue);
       Ser.println("\n");
     }
   }
 
   // Did anything change?
-  if (white_LED_is_on != white_LED_was_on) {
-    white_LED_was_on = white_LED_is_on;
-    digitalWrite(PIN_LED_BTN_WHITE, white_LED_is_on);
-    digitalWrite(PIN_LED_ONBOARD_RED, !white_LED_is_on);
+  if (request_LED_white != state_LED_white) {
+    write_LED_white(request_LED_white);
     Ser.println(F("WHITE\n-----"));
-    states_have_changed = true;
+    request_is_pending = true;
   }
 
-  if (blue_LED_is_on != blue_LED_was_on) {
-    blue_LED_was_on = blue_LED_is_on;
-    digitalWrite(PIN_LED_BTN_BLUE, blue_LED_is_on);
-    digitalWrite(PIN_LED_ONBOARD_BLUE, !blue_LED_is_on);
+  if (request_LED_blue != state_LED_blue) {
+    write_LED_blue(request_LED_blue);
     Ser.println(F("BLUE\n-----"));
-    states_have_changed = true;
+    request_is_pending = true;
   }
 
-  if (states_have_changed) {
+  if (request_is_pending) {
     // Send out new states to the web server
-    send_buttons(white_LED_is_on, blue_LED_is_on);
-    states_have_changed = false;
+    if (send_buttons(request_LED_white, request_LED_blue)) {
+      // Success -> Grant request
+      state_LED_white = request_LED_white;
+      state_LED_blue = request_LED_blue;
+    }
+    write_LED_white(state_LED_white);
+    write_LED_blue(state_LED_blue);
+
+    // Reset pending request
+    request_is_pending = false;
+    request_LED_white = state_LED_white;
+    request_LED_blue = state_LED_blue;
   }
 
   // The ESP8266 mcu has a lot of background processes (WiFi connectivity and
