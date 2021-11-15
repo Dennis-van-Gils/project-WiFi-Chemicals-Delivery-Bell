@@ -100,14 +100,6 @@ static bool request_LED_blue;  // True: Turn on, False: Turn off.
 static bool state_LED_white; // True: Turned on, False: Turned off.
 static bool state_LED_blue;  // True: Turned on, False: Turned off.
 
-// Legacy LED states
-// These states are used to detect a change over a longer (5 minute) interval
-// before an email will be send out. This allows the user to revert back an
-// (erroneous) button push and prevents an email from being send out if the
-// state has reverted to its `legacy` state in the mean time. Prevents spam.
-static bool legacy_state_LED_white;
-static bool legacy_state_LED_blue;
-
 // OLED display
 Adafruit_SSD1306 display = Adafruit_SSD1306(128, 32, &Wire);
 
@@ -126,7 +118,7 @@ const unsigned char img_flask[] PROGMEM = {
     0x03, 0x98, 0x61, 0xc0, 0x03, 0x80, 0x01, 0xc0, 0x03, 0x00, 0x00, 0xc0,
     0x03, 0xff, 0xff, 0xc0, 0x03, 0xff, 0xff, 0xc0};
 
-// Construct full URLs from `wifi_settings.h`
+// To construct full URLs from `wifi_settings.h`
 const int URL_MAXLEN = 256;
 char url_starting_up[URL_MAXLEN];
 char url_button_pressed[URL_MAXLEN];
@@ -194,6 +186,57 @@ public:
 Screensaver screensaver(30000, 200);
 
 /*------------------------------------------------------------------------------
+  EmailScheduler
+------------------------------------------------------------------------------*/
+
+class EmailScheduler {
+private:
+  uint32_t T_delay = EMAIL_DELAY_MINUTES * 60 * 1e3;
+  uint32_t last_bump;
+
+  // Legacy LED states
+  // These states are used to detect a change over a longer (5 minute) interval
+  // before an email will be send out. This allows the user to revert back an
+  // (erroneous) button push and prevents an email from being send out if the
+  // state has reverted to its `legacy` state in the mean time. Prevents spam.
+  bool pending_email;
+  bool legacy_state_LED_white;
+  bool legacy_state_LED_blue;
+
+public:
+  EmailScheduler() { reset(); }
+
+  void reset() {
+    last_bump = millis();
+    pending_email = false;
+    legacy_state_LED_white = state_LED_white;
+    legacy_state_LED_blue = state_LED_blue;
+  }
+
+  void bump() {
+    if ((legacy_state_LED_white == state_LED_white) &
+        (legacy_state_LED_blue == state_LED_blue)) {
+      pending_email = false;
+    } else {
+      last_bump = millis();
+      pending_email = true;
+    }
+    Ser.print("Email pending: ");
+    Ser.println(pending_email ? "True\n" : "False\n");
+  }
+
+  bool poll() {
+    if ((pending_email) & (millis() - last_bump > T_delay)) {
+      reset();
+      return true;
+    }
+    return false;
+  }
+};
+
+EmailScheduler email_scheduler;
+
+/*------------------------------------------------------------------------------
   get_wifi_status_descr
 ------------------------------------------------------------------------------*/
 
@@ -218,8 +261,8 @@ void get_wifi_status_descr(wl_status_t status, char descr[16]) {
 ------------------------------------------------------------------------------*/
 
 void infinite_loop(const char *final_msg) {
-  // Infinite loop without escape, while displaying a final error message on the
-  // OLED screen flashing on and off to prevent OLED burn-in.
+  // Infinite loop without escape, while displaying a final error message on
+  // the OLED screen flashing on and off to prevent OLED burn-in.
   bool toggle = true;
   Ser.println(final_msg);
 
@@ -254,11 +297,6 @@ bool http_post(const String &url, const String &post_http_request,
   HTTPClient http;
   WiFiClientSecure client;
   int http_code;
-
-  display.clearDisplay();
-  display.setCursor(0, 0);
-  display.println(F("Sending..."));
-  display.display();
 
   // yield();
   delay(1);
@@ -346,17 +384,20 @@ bool send_starting_up() {
   /* Signal the web server that the Arduino has (re)started.
   Returns true when successful, otherwise false.
    */
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println(F("Sending..."));
+  display.display();
 
-  // Reset LEDs to off
+  // Reset
   request_is_pending = false;
   request_LED_white = false;
   request_LED_blue = false;
   state_LED_white = false;
   state_LED_blue = false;
-  legacy_state_LED_white = false;
-  legacy_state_LED_blue = false;
   write_LED_white(false);
   write_LED_blue(false);
+  email_scheduler.reset();
 
   Ser.println(F("STARTING UP\n-----------"));
   http_request = F("key=");
@@ -375,6 +416,11 @@ bool send_email(bool restarted = false) {
   /* Signal the web server to send out emails.
   Returns true when successful, otherwise false.
    */
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println(F("Emailing.."));
+  display.display();
+
   Ser.println(F("EMAIL\n-----"));
   http_request = F("key=");
   http_request += mac_address;
@@ -392,8 +438,12 @@ bool send_buttons(bool white, bool blue) {
   /* Send out new button states to the web server.
   Returns true when successful, otherwise false.
    */
-  char expected_reply[4];
+  display.clearDisplay();
+  display.setCursor(0, 0);
+  display.println(F("Sending..."));
+  display.display();
 
+  char expected_reply[4];
   snprintf(expected_reply, 4, "%d %d", white, blue);
   http_request = F("key=");
   http_request += mac_address;
@@ -618,6 +668,7 @@ void loop() {
       // Success -> Grant request
       state_LED_white = request_LED_white;
       state_LED_blue = request_LED_blue;
+      email_scheduler.bump();
     }
     write_LED_white(state_LED_white);
     write_LED_blue(state_LED_blue);
@@ -640,4 +691,7 @@ void loop() {
   delay(1);
 
   screensaver.update();
+  if (email_scheduler.poll()) {
+    send_email();
+  }
 }

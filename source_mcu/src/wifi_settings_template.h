@@ -32,4 +32,15 @@ E.g. "https://pof.tnw.utwente.nl/chemicals_delivery"
 */
 const char *url_website = "";
 
+/* An automated email will be send out to the users after each button press.
+However, to prevent spam there is a delay timer before the email gets send out.
+This allows the user to revert back an (erroneous) button push and prevents an
+email from being send out if the state has reverted back to its previous state
+in the mean time.
+
+The users that will receive an email are configured on the web server, see and
+edit `globals.php` on the server.
+*/
+const float EMAIL_DELAY_MINUTES = 1;
+
 #endif
