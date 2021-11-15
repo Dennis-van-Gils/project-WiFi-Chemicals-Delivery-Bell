@@ -155,6 +155,14 @@ public:
     x_pos = 0;
   }
 
+  void engage(uint32_t delay = 0) {
+    // Engage the screensaver after the passed delay [ms]
+    now = millis();
+    last_activity = now - T_wait + delay;
+    last_draw = now - T_wait + delay;
+    x_pos = 0;
+  }
+
   void update() {
     // Draw screensaver to OLED screen when inactivity timer has fired,
     // otherwise leave the screen alone and continue waiting.
@@ -175,7 +183,7 @@ public:
   }
 };
 
-Screensaver screensaver(10000, 200);
+Screensaver screensaver(30000, 200);
 
 /*------------------------------------------------------------------------------
   get_wifi_status_descr
@@ -326,28 +334,34 @@ bool http_post(const String &url, const String &post_http_request,
   send_starting_up
 ------------------------------------------------------------------------------*/
 
-void send_starting_up() {
+bool send_starting_up() {
   /* Signal the web server that the Arduino has (re)started.
+  Returns true when successful, otherwise false.
    */
   Ser.println(F("STARTING UP\n-----------"));
   http_request = F("key=");
   http_request += mac_address;
-  http_post(url_starting_up, http_request, "1");
-  screensaver.reset();
+  bool success = http_post(url_starting_up, http_request, "1");
+
+  screensaver.engage(success ? 1e3 : 30e3);
+  return success;
 }
 
 /*------------------------------------------------------------------------------
   send_email
 ------------------------------------------------------------------------------*/
 
-void send_email(bool restarted = false) {
+bool send_email(bool restarted = false) {
   /* Signal the web server to send out emails.
+  Returns true when successful, otherwise false.
    */
   Ser.println(F("EMAIL\n-----"));
   http_request = F("key=");
   http_request += mac_address;
-  http_post(url_send_email, http_request, "1");
-  screensaver.reset();
+  bool success = http_post(url_send_email, http_request, "1");
+
+  screensaver.engage(success ? 1e3 : 30e3);
+  return success;
 }
 
 /*------------------------------------------------------------------------------
@@ -356,11 +370,9 @@ void send_email(bool restarted = false) {
 
 bool send_buttons(bool white, bool blue) {
   /* Send out new button states to the web server.
-
   Returns true when successful, otherwise false.
    */
   char expected_reply[4];
-  bool success;
 
   snprintf(expected_reply, 4, "%d %d", white, blue);
   http_request = F("key=");
@@ -369,9 +381,9 @@ bool send_buttons(bool white, bool blue) {
   http_request += white;
   http_request += F("&blue=");
   http_request += blue;
-  success = http_post(url_button_pressed, http_request, expected_reply);
-  screensaver.reset();
+  bool success = http_post(url_button_pressed, http_request, expected_reply);
 
+  screensaver.engage(success ? 1e3 : 30e3);
   return success;
 }
 

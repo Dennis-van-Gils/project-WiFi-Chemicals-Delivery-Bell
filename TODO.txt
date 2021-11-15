@@ -21,4 +21,3 @@ x) Add README.rst
 x) Add 'send email' functionality using idle/activity timer.
    Automate to send 5 minutes after latest button press.
 
-x) Screen saver should kick in immediately when sending is successful
