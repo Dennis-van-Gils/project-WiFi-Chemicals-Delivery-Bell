@@ -18,4 +18,3 @@ x) Add README.rst
   MCU
 ---------------
 
-x) Show an email icon in the screensaver to indicate pending email
