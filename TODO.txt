@@ -2,19 +2,16 @@
   Project
 ---------------
 
-x) Add photos
-
-x) Add README.rst
-   
-   
+All done
 
 ---------------
   Web
 ---------------
 
-
+All done
 
 ---------------
   MCU
 ---------------
 
+All done
