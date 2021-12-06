@@ -1,6 +1,7 @@
 # WiFi Chemicals Delivery Bell
 
 ![Photo](/docs/photos/01_chemicals_bell__front.jpg)
+![Photo](/docs/photos/04_chemicals_bell__opened.jpg)
 
 ## Web interface
 
@@ -18,6 +19,8 @@
 ![Soldering template 3D](/docs/electronics/circuit.PNG)
 ![Soldering template top](/docs/electronics/circuit_top.PNG)
 ![Soldering template back](/docs/electronics/circuit_back.PNG)
+![Photo](/docs/photos/08_detail__solder_front.jpg)
+![Photo](/docs/photos/09_detail__solder_back.jpg)
 
 ## Shopping cart
 
