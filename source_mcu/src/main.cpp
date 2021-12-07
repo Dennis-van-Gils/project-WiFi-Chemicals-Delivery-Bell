@@ -148,7 +148,7 @@ private:
   uint32_t last_bump;
 
   // Legacy LED states
-  // These states are used to detect a change over a longer (5 minute) interval
+  // These states are used to detect a change over a long (1 minute) interval
   // before an email will be send out. This allows the user to revert back an
   // (erroneous) button push and prevents an email from being send out if the
   // state has reverted to its `legacy` state in the mean time. Prevents spam.
