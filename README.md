@@ -8,7 +8,7 @@ The `Bell` is powered by a WiFi-enabled microprocessor board from Adafruit, name
 
 ![Photo](/docs/photos/04_chemicals_bell__opened.jpg)
 
-Detailed plans are included to build one yourself. The total parts cost of the enclosure plus electronics is around €130. The shopping lists are included (see below). A small amount of straight-forward soldering is required. A few parts have to be 3D-printed, namely the OLED screen holder and the microcontroller board mounting plate (STL files included), but you could also [MacGyver](https://en.wikipedia.org/wiki/MacGyver) your own construction here.
+Detailed plans are included to build one yourself. The total parts cost of the enclosure plus electronics is around €130. The shopping lists are included (see below). A small amount of soldering is required. A few parts have to be 3D-printed, namely the OLED screen holder and the microcontroller board mounting plate (STL files included), but you could also [MacGyver](https://en.wikipedia.org/wiki/MacGyver) your own construction here.
 
 I will gladly assist my colleagues at the University if they want to go live with the `Bell`. Setting up the web server is straight-forward. Simply copy the `web` folder to your server (presumably, the server that already is hosting your group's internet page) and edit the single configuration file `globals.php` to set up the email list and the hashed password used between the microcontroller and the server. The microcontroller itself needs to be flashed with firmware which has to be compiled. The source code for this is included in folder `source_mcu` and it has one configuration file you should edit: `source_mcu/src/wifi_settings_template.h`. If you send me your configuration file, I can also easily compile the firmware for you. 
 
