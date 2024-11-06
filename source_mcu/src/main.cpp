@@ -17,7 +17,7 @@ NOTE:
 
 GitHub: https://github.com/Dennis-van-Gils/project-WiFi-Chemicals-Delivery-Bell
 Author: Dennis van Gils
-Date  : 12-11-2021
+Date  : 06-11-2024
  */
 
 #include <Arduino.h>
@@ -37,9 +37,9 @@ Date  : 12-11-2021
 #include <StringReserveCheck.h>
 
 #if __has_include("wifi_settings.h")
-#  include <wifi_settings.h>
+#include <wifi_settings.h>
 #else
-#  include <wifi_settings_template.h>
+#include <wifi_settings_template.h>
 #endif
 
 // Serial monitor
@@ -179,13 +179,7 @@ public:
     Ser.println(pending_email ? "True\n" : "False\n");
   }
 
-  bool poll() {
-    if ((pending_email) & (millis() - last_bump > T_delay)) {
-      reset();
-      return true;
-    }
-    return false;
-  }
+  bool poll() { return ((pending_email) & (millis() - last_bump > T_delay)); }
 };
 
 EmailScheduler email_scheduler;
@@ -712,5 +706,18 @@ void loop() {
   screensaver.update();
   if (email_scheduler.poll()) {
     send_email();
+
+    // v2.0: After the automated 'Chemicals delivered' email has been send to
+    // the user, revert all buttons back to their idle off state. The user no
+    // longer has to deactivate any lit buttons, and hence the 'All done' email
+    // message is now suppressed.
+    request_LED_white = false;
+    request_LED_blue = false;
+    state_LED_white = false;
+    state_LED_blue = false;
+    write_LED_white(false);
+    write_LED_blue(false);
+    send_buttons(false, false);
+    email_scheduler.reset();
   }
 }

@@ -68,11 +68,11 @@ if (!file_exists(\Globals\FILE_ARDUINO_STATUS)) {
       <?php
         if ($status->white == true |
             $status->blue == true) {
-          echo "Chemicals delivered";
+          echo "Email 'Chemicals delivered' will be send within one minute";
         } elseif ($status->starting_up == true) {
           echo "Arduino has (re)started";
         } else {
-          echo "No chemicals awaiting";
+          echo "Waiting for a button press on the box";
         }
       ?>
     </h1>
