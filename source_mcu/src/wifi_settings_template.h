@@ -28,7 +28,7 @@ of the Arduino.
 const char *password = "";
 
 /* The URL to your website serving the chemicals delivery application.
-E.g. "https://pof.tnw.utwente.nl/chemicals_delivery"
+E.g. "https://pof-inventory.tnw.utwente.nl/chemicals_delivery"
 */
 const char *url_website = "";
 
