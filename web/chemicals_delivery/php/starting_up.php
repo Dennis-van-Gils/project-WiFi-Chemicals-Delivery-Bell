@@ -23,6 +23,11 @@
 header("Content-Type: text/plain");
 require_once '../globals.php';
 
+use Symfony\Component\Mime\Email;
+use Symfony\Component\Mime\Address;
+use Symfony\Component\Mailer\Mailer;
+use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
+
 function exceptions_error_handler($severity, $message, $filename, $lineno) {
   throw new ErrorException($message, 0, $severity, $filename, $lineno);
 }
@@ -58,7 +63,6 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   restore_error_handler();
 
   // Construct email message
-  $headers = 'From: '.\Globals\email_from.PHP_EOL;
   $subject = \Globals\email_tag." "."Arduino has restarted";
   $message = "The WiFi Arduino `Chemicals Delivery Bell` has (re)started";
   $message = (
@@ -70,14 +74,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     "  ".\Globals\WEB_CHEMICALS_DELIVERY
   );
 
+  $email = (new Email())
+    ->from(new Address(\Globals\email_from, \Globals\email_name))
+    ->to(...\Globals\email_to)
+    ->subject($subject)
+    ->text($message);
+
   // Send email
-  if (!mail(\Globals\email_to, $subject, $message, $headers)) {
-    // Error
-    // There is no error message associated with the mail() function. There is
-    // only a true or false returned on whether the email was accepted for
-    // delivery. Not whether it ultimately gets delivered, but basically whether
-    // the domain exists and the address is a validly formatted email address.
-    echo "SERVER ERROR: Could not send email.".PHP_EOL."Check server logs.";
+  $transport = new EsmtpTransport('localhost');
+  $mailer = new Mailer($transport);
+  $mailer->send($email);
+
+  if (!$mailer) {
+    // Error: Could not send email
+    echo "SERVER ERROR: Could not send email.".PHP_EOL.error_get_last();
     exit;
   }
 

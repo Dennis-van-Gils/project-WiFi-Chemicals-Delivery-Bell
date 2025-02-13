@@ -18,9 +18,13 @@ define(__NAMESPACE__.'\WEB_ROOT', $protocol.$_SERVER['HTTP_HOST'].$_SERVER['CONT
 // URL of the web interface
 define(__NAMESPACE__.'\WEB_CHEMICALS_DELIVERY', \Globals\WEB_ROOT.'chemicals_delivery/');
 
-// Filename of the textfile on the server to store the Arduino status to
+// Internal server directories
+define(__NAMESPACE__.'\DIR_BACK_ROOT' , dirname(dirname(__DIR__)).'/');
 define(__NAMESPACE__.'\DIR_ROOT', __DIR__.'/');
 define(__NAMESPACE__.'\FILE_ARDUINO_STATUS', \Globals\DIR_ROOT.'_arduino_status.txt');
+
+// Composer Manager with Symfony installed to handle sending out emails
+require \Globals\DIR_BACK_ROOT.'vendor/autoload.php';
 
 // The Arduino can only successfully communicate with the web server if it sends
 // along the correct key. The key that is send by the Arduino is its MAC address
@@ -31,7 +35,10 @@ define(__NAMESPACE__.'\FILE_ARDUINO_STATUS', \Globals\DIR_ROOT.'_arduino_status.
 define(__NAMESPACE__.'\HASHED_MAC_ADDRESS', '$2y$10$Mven4dAvVq6UYpSTUqZWFeoV.Tk9BgEFHCZxykEfcXQL6lMhtfRuy');
 
 // Email
-//   email_to: Comma-separated list of recipients
 define(__NAMESPACE__.'\email_tag' , '[DingDong]');
-define(__NAMESPACE__.'\email_from', 'PoF Chemicals Delivery Bell <noreply@noreply.nl>');
-define(__NAMESPACE__.'\email_to', 'd.p.m.vangils@utwente.nl');
+define(__NAMESPACE__.'\email_name', 'PoF Chemicals Delivery Bell');
+define(__NAMESPACE__.'\email_from', 'pof.chemicals@'.gethostname());
+define(__NAMESPACE__.'\email_to',
+  ['d.p.m.vangils@utwente.nl',
+   'purchase-pof-tnw@utwente.nl']
+);

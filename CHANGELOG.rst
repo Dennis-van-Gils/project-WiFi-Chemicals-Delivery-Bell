@@ -1,6 +1,12 @@
 Changelog
 =========
 
+3.0.0 (2025-02-13)
+------------------
+Symfony Framework is now used to send out notification emails, instead of using
+the native PHP `mail()` method. You must now make sure to install Symfony using
+Composer onto your PHP server.
+
 2.0.0 (2024-11-06)
 ------------------
 After the automated 'Chemicals delivered' email has been send to the user,
