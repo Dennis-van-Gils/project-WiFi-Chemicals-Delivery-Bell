@@ -83,17 +83,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
   if ($blue) {
     $subject = $subject."REFRIGERATED chemicals delivered";
-    $message = "REFRIGERATED chemicals delivered";
+    $headline = "REFRIGERATED chemicals delivered";
   } else if ($white) {
     $subject = $subject."Chemicals delivered";
-    $message = "Chemicals delivered";
+    $headline = "Chemicals delivered";
   } else {
     $subject = $subject."  --  All done  --";
-    $message = "No chemicals awaiting anymore";
+    $headline = "No chemicals awaiting anymore";
   }
 
   $message = (
-    $message.PHP_EOL.PHP_EOL.
+    $headline.PHP_EOL.PHP_EOL.
     "  Date : ".$date.PHP_EOL.
     "  White: ".$white.PHP_EOL.
     "  Blue : ".$blue.PHP_EOL.PHP_EOL.
@@ -116,6 +116,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Error: Could not send email
     echo "SERVER ERROR: Could not send email.".PHP_EOL.error_get_last();
   }
+
+  // Save last sent email to file on server
+  $data = array(
+    'date' => $date,
+    'headline' => $headline,
+  );
+  $last_email = json_encode($data);
+
+  set_error_handler('exceptions_error_handler');
+  try {
+    file_put_contents(\Globals\FILE_LAST_EMAIL, $last_email);
+  } catch (Exception $e) {
+    echo "SERVER ERROR: While saving file `".\Globals\FILE_LAST_EMAIL."`".PHP_EOL;
+    echo $e->getMessage();
+    restore_error_handler();
+    exit;
+  }
+  restore_error_handler();
 
   // Success
   echo "1";

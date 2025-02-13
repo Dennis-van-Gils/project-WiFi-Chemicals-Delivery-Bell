@@ -22,6 +22,7 @@ define(__NAMESPACE__.'\WEB_CHEMICALS_DELIVERY', \Globals\WEB_ROOT.'chemicals_del
 define(__NAMESPACE__.'\DIR_BACK_ROOT' , dirname(dirname(__DIR__)).'/');
 define(__NAMESPACE__.'\DIR_ROOT', __DIR__.'/');
 define(__NAMESPACE__.'\FILE_ARDUINO_STATUS', \Globals\DIR_ROOT.'_arduino_status.txt');
+define(__NAMESPACE__.'\FILE_LAST_EMAIL', \Globals\DIR_ROOT.'_last_email.txt');
 
 // Composer Manager with Symfony installed to handle sending out emails
 require \Globals\DIR_BACK_ROOT.'vendor/autoload.php';

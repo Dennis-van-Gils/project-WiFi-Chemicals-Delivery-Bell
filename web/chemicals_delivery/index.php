@@ -26,6 +26,21 @@ if (!file_exists(\Globals\FILE_ARDUINO_STATUS)) {
   $status = json_decode(file_get_contents(\Globals\FILE_ARDUINO_STATUS));
 }
 
+// Likewise, we save to a simple text file on the server when the last email
+// was send out.
+if (!file_exists(\Globals\FILE_LAST_EMAIL)) {
+  // File does not exist. Create one.
+  $data = array(
+    'date' => 'Unknown',     // String: Date of last sent email
+    'headline' => 'Unknown', // String: Headline of last sent email
+  );
+  $last_email = json_encode($data);
+  file_put_contents(\Globals\FILE_LAST_EMAIL, $last_email);
+} else {
+  // File exists --> read file contents
+  $last_email = json_decode(file_get_contents(\Globals\FILE_LAST_EMAIL));
+}
+
 ?>
 
 <!----------------------------------------------------------------
@@ -100,7 +115,14 @@ if (!file_exists(\Globals\FILE_ARDUINO_STATUS)) {
 
   <div class="row">
     <div>
-      <small>Last activity was registered at:</small><br>
+      <small>Last sent email:</small><br>
+      <?php echo $last_email->date." - ".$last_email->headline?>
+    </div>
+  </div>
+
+  <div class="row">
+    <div>
+      <small>Last activity:</small><br>
       <?php echo $status->date ?>
     </div>
   </div>

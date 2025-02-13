@@ -1,6 +1,10 @@
 Changelog
 =========
 
+4.0.0 (2025-02-13)
+------------------
+Keep track of the last sent email and print this info to the webpage.
+
 3.0.0 (2025-02-13)
 ------------------
 Symfony Framework is now used to send out notification emails, instead of using
